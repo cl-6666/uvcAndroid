@@ -13,9 +13,6 @@ ext {
     minSdkVersion = 21
     versionCode = 126
     versionNameString = '3.3.3'
-    javaSourceCompatibility = JavaVersion.VERSION_11
-    javaTargetCompatibility = JavaVersion.VERSION_11
-//    ndkVersion = '21.0.6113669'
     supportLibVersion = '27.1.1'
     versionBuildTool = '27.0.3'
     kotlinCoreVersion = '1.3.2'
