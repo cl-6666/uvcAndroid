@@ -8,7 +8,7 @@ plugins {
 android {
     compileSdk rootProject.ext.versionCompiler
     namespace 'com.jiangdg.ausbc'
-
+    compileSdk 33
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.versionTarget
