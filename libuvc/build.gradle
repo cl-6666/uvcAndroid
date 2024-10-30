@@ -1,5 +1,6 @@
 plugins {
 	id 'com.android.library'
+	id 'maven-publish'
 }
 
 android {
@@ -41,3 +42,18 @@ dependencies {
 	implementation 'com.elvishew:xlog:1.11.0'
 //	implementation project(path: ':libuvccommon')
 }
+
+afterEvaluate {
+	publishing {
+		publications {
+			// Creates a Maven publication called "release".
+			release(MavenPublication) {
+				from components.release
+				groupId = 'com.github.jitpack'
+				artifactId = 'android-example'
+				version = '1.0'
+			}
+		}
+	}
+}
+
