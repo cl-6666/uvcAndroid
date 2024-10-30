@@ -8,7 +8,6 @@ plugins {
 android {
     compileSdk rootProject.ext.versionCompiler
     namespace 'com.jiangdg.ausbc'
-    compileSdk 33
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.versionTarget
@@ -42,8 +41,11 @@ dependencies {
     api 'com.elvishew:xlog:1.11.0'
 //    implementation fileTree("libs")
 
-    implementation project(path: ':libuvc')
-    api project(path: ':libnative')
+//    implementation project(path: ':libuvc')
+//    api project(path: ':libnative')
+
+    api project(':libuvc')
+    api project(':libnative')
 }
 
 

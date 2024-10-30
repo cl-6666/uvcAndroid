@@ -14,6 +14,10 @@ android {
         versionCode 1
         versionName "1.0"
 
+        ndk{
+            abiFilters 'armeabi-v7a','arm64-v8a'
+        }
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,6 +40,11 @@ android {
         dataBinding = true
         buildConfig = true
     }
+
+    packagingOptions {
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libfbjni.so'
+    }
 }
 
 dependencies {
@@ -44,6 +53,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+
+//    implementation 'com.github.cl-6666:uvcAndroid:v1.0.9'
 
     implementation project(':libausbc')
 }

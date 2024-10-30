@@ -1,20 +1,29 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
-        mavenCentral()
         maven { url 'https://jitpack.io' }
-        //阿里云云效仓库：https://maven.aliyun.com/mvn/guide
-        maven { url 'https://maven.aliyun.com/repository/central' }
+        mavenCentral()
+        maven { url 'https://dl.google.com/dl/android/maven2/' }
+        maven{ url 'https://maven.aliyun.com/repository/google'}
+        maven{ url 'https://maven.aliyun.com/repository/gradle-plugin'}
+        maven{ url 'https://maven.aliyun.com/repository/public'}
+        maven{ url 'https://maven.aliyun.com/repository/jcenter'}
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        gradlePluginPortal()
         google()
-        mavenCentral()
         maven { url 'https://jitpack.io' }
-        //阿里云云效仓库：https://maven.aliyun.com/mvn/guide
-        maven { url 'https://maven.aliyun.com/repository/central' }
+        mavenCentral()
+        maven { url 'https://dl.google.com/dl/android/maven2/' }
+        maven{ url 'https://maven.aliyun.com/repository/google'}
+        maven{ url 'https://maven.aliyun.com/repository/gradle-plugin'}
+        maven{ url 'https://maven.aliyun.com/repository/public'}
+        maven{ url 'https://maven.aliyun.com/repository/jcenter'}
     }
 }
 

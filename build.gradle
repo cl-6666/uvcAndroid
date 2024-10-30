@@ -3,7 +3,6 @@ plugins {
     id 'com.android.application' version '7.4.2' apply false
     id 'com.android.library' version '7.4.2' apply false
     id 'org.jetbrains.kotlin.android' version '1.8.0' apply false
-    id("com.google.dagger.hilt.android") version "2.48.1" apply false
 }
 
 ext {
@@ -11,8 +10,9 @@ ext {
     versionCompiler = 30
     versionTarget = 27
     minSdkVersion = 21
-    versionCode = 126
-    versionNameString = '3.3.3'
+    versionCode = 100
+    versionNameString = '1.0.9'
+
     supportLibVersion = '27.1.1'
     versionBuildTool = '27.0.3'
     kotlinCoreVersion = '1.3.2'
