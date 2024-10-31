@@ -50,19 +50,17 @@ class DemoFragment: CameraFragment() {
         return mViewBinding?.root
     }
 
-    // if you want offscreen render
-    // please return null
+
     override fun getCameraView(): IAspectRatio? {
         return mViewBinding?.tvCameraRender
     }
 
-    // if you want offscreen render
-    // please return null, the same as getCameraView()
+
     override fun getCameraViewContainer(): ViewGroup? {
         return mViewBinding?.container
     }
 
-    // camera open status callback
+    // 相机打开状态回调
     override fun onCameraState(self: ICamera, 
                                code: ICameraStateCallBack.State,
                                msg: String?) {
