@@ -242,4 +242,4 @@ class DemoMultiCameraFragment : MultiCameraFragment(), ICameraStateCallBack {
 感谢
 -------
 
- [saki4510t/AndroidUsBCamera]([https://github.com/saki4510t/UVCCamera](https://github.com/jiangdongguo/AndroidUSBCamera))
+ [AndroidUsBCamera](https://github.com/jiangdongguo/AndroidUSBCamera)
