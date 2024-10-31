@@ -1,7 +1,6 @@
 
 介绍
 -------
-
 - Support opening multi-road camera;
 - Support opening uvc camera on Android 4.4+;
 - Support previewing 480p、720p、1080p，etc;
@@ -239,3 +238,8 @@ class DemoMultiCameraFragment : MultiCameraFragment(), ICameraStateCallBack {
     protected fun isAutoRequestPermission() = true
 }
 ```
+
+感谢
+-------
+
+ [saki4510t/AndroidUsBCamera]([https://github.com/saki4510t/UVCCamera](https://github.com/jiangdongguo/AndroidUSBCamera))
