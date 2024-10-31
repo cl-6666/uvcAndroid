@@ -28,6 +28,7 @@ import com.jiangdg.ausbc.camera.bean.CameraRequest
 import com.jiangdg.ausbc.callback.*
 import com.jiangdg.ausbc.camera.CameraUVC
 import com.jiangdg.ausbc.render.effect.AbstractEffect
+import com.jiangdg.ausbc.render.effect.EffectBlackWhite
 import com.jiangdg.ausbc.render.env.RotateType
 import com.jiangdg.ausbc.utils.Logger
 import com.jiangdg.ausbc.utils.SettableFuture
@@ -928,11 +929,10 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
             .setRenderMode(CameraRequest.RenderMode.OPENGL)
             .setDefaultRotateType(RotateType.ANGLE_0)
             .setAudioSource(CameraRequest.AudioSource.SOURCE_SYS_MIC)
-            .setPreviewFormat(CameraRequest.PreviewFormat.FORMAT_MJPEG)
             .setAspectRatioShow(true)
             .setCaptureRawImage(false)
             .setRawPreviewData(false)
-            .create()
+            .create();
     }
 
     companion object {

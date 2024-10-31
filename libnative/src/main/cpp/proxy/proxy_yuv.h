@@ -17,16 +17,17 @@
  *
  * @author Created by jiangdg on 2022/2/18
  */
+#include <jni.h>
+#include <cstdlib>
+#include "../module/yuv/yuv.h"
+#include "../utils/logger.h"
+
 #ifndef ANDROIDUSBCAMERA_PROXY_YUV_H
 #define ANDROIDUSBCAMERA_PROXY_YUV_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <jni.h>
-#include <cstdlib>
-#include "../module/yuv/yuv.h"
-#include "../utils/logger.h"
 
 void yuv420spToNv21(JNIEnv *env, jobject instance, jbyteArray data, jint width, jint height);
 void nv21ToYuv420sp(JNIEnv *env, jobject instance, jbyteArray data, jint width, jint height);

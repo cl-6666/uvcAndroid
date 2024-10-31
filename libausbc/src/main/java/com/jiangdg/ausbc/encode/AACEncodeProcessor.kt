@@ -29,7 +29,6 @@ import com.jiangdg.ausbc.utils.Utils
 import com.jiangdg.natives.LameMp3
 import java.io.File
 import java.io.FileOutputStream
-import java.nio.ByteBuffer
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.Exception
@@ -38,7 +37,7 @@ import kotlin.Exception
  *
  * @author Created by jiangdg on 2022/2/10
  */
-class AACEncodeProcessor(strategy: IAudioStrategy? = null) : AbstractProcessor(false) {
+class AACEncodeProcessor(strategy: IAudioStrategy? = null) : AbstractProcessor() {
     private var mAudioTrack: AudioTrack? = null
     private var mPresentationTimeUs: Long = 0L
     private var mCountDownLatch: CountDownLatch? = null
@@ -129,10 +128,13 @@ class AACEncodeProcessor(strategy: IAudioStrategy? = null) : AbstractProcessor(f
     }
 
     override fun processOutputData(
-        encodeData: ByteBuffer,
-        bufferInfo: MediaCodec.BufferInfo
-    ): Pair<IEncodeDataCallBack.DataType, ByteBuffer> {
-        return Pair(IEncodeDataCallBack.DataType.AAC, encodeData)
+        bufferInfo: MediaCodec.BufferInfo,
+        encodeData: ByteArray
+    ): Pair<IEncodeDataCallBack.DataType, ByteArray> {
+        val iFrameData = ByteArray(bufferInfo.size + ADTS_LEN)
+        addADTStoPacket(iFrameData, iFrameData.size)
+        System.arraycopy(encodeData, 0, iFrameData, ADTS_LEN, bufferInfo.size)
+        return Pair(IEncodeDataCallBack.DataType.AAC, iFrameData)
     }
 
     override fun processInputData(data: ByteArray): ByteArray? {
@@ -369,11 +371,33 @@ class AACEncodeProcessor(strategy: IAudioStrategy? = null) : AbstractProcessor(f
     companion object {
         private const val TAG = "AACEncodeProcessor"
         private const val MIME_TYPE = "audio/mp4a-latm"
-        const val BIT_RATE = 32 * 1024
+        private const val BIT_RATE = 16000
         private const val MAX_INPUT_SIZE = 48000
-        const val CHANNEL_OUT_CONFIG = AudioFormat.CHANNEL_OUT_MONO
+        private const val CHANNEL_OUT_CONFIG = AudioFormat.CHANNEL_OUT_MONO
         private const val AUDIO_TRACK_MODE = AudioTrack.MODE_STREAM
         private const val CODEC_AAC_PROFILE = MediaCodecInfo.CodecProfileLevel.AACObjectLC
         private const val DEGREE_RECORD_MP3 = 7
+
+        private const val ADTS_LEN = 7
+        private const val AAC_FRAME = 0
+
+        private val AUDIO_SAMPLING_RATES = intArrayOf(
+            96000,  // 0
+            88200,  // 1
+            64000,  // 2
+            48000,  // 3
+            44100,  // 4
+            32000,  // 5
+            24000,  // 6
+            22050,  // 7
+            16000,  // 8
+            12000,  // 9
+            11025,  // 10
+            8000,  // 11
+            7350,  // 12
+            -1,  // 13
+            -1,  // 14
+            -1
+        )
     }
 }

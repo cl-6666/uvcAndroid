@@ -42,7 +42,7 @@
 #include "bitstream.h"
 #include "tables.h"
 #include <string.h>
-
+#include <stdlib.h>
 
 
 /* unsigned int is at least this large:  */

@@ -6,11 +6,10 @@
 
 #ifndef ANDROIDUSBCAMERA_YUV_H
 #define ANDROIDUSBCAMERA_YUV_H
-
+#include <cstring>
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <string.h>
 
 void *yuv420spToNv21Internal(char* srcData, char* destData, int width, int height);
 void *nv21ToYuv420spInternal(char* srcData, char* destData, int width, int height);

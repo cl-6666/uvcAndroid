@@ -50,6 +50,10 @@ dependencies {
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
+//    implementation 'com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.3.3'
+//    implementation 'com.github.cl-6666:uvcAndroid:v1.1.5'
+
+
 
     implementation project(':libausbc')
 }

@@ -38,7 +38,6 @@
 #include <string.h>
 
 
-
 #ifndef USE_GOGO_SUBBAND
 static const FLOAT enwindow[] = {
     -4.77e-07 * 0.740951125354959 / 2.384e-06, 1.03951e-04 * 0.740951125354959 / 2.384e-06,

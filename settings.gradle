@@ -29,6 +29,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "uvcAndroid"
 include ':app'
+
 include ':libnative'
 include ':libausbc'
+include ':libuvccommon'
 include ':libuvc'

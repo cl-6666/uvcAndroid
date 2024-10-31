@@ -53,7 +53,7 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
         AtomicBoolean(false)
     }
 
-    override fun initView() {
+    override fun initData() {
         when (val cameraView = getCameraView()) {
             is TextureView -> {
                 handleTextureView(cameraView)
@@ -115,12 +115,7 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
                     setUsbControlBlock(null)
                 }
                 mRequestPermission.set(false)
-                try {
-                    mCurrentCamera?.cancel(true)
-                    mCurrentCamera = null
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                mCurrentCamera = null
             }
 
             override fun onConnectDev(device: UsbDevice?, ctrlBlock: USBMonitor.UsbControlBlock?) {
@@ -129,12 +124,6 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
                 mCameraMap[device.deviceId]?.apply {
                     setUsbControlBlock(ctrlBlock)
                 }?.also { camera ->
-                    try {
-                        mCurrentCamera?.cancel(true)
-                        mCurrentCamera = null
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
                     mCurrentCamera = SettableFuture()
                     mCurrentCamera?.set(camera)
                     openCamera(mCameraView)
@@ -145,16 +134,12 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
             override fun onDisConnectDec(device: UsbDevice?, ctrlBlock: USBMonitor.UsbControlBlock?) {
                 closeCamera()
                 mRequestPermission.set(false)
+                mCurrentCamera = null
             }
 
             override fun onCancelDev(device: UsbDevice?) {
                 mRequestPermission.set(false)
-                try {
-                    mCurrentCamera?.cancel(true)
-                    mCurrentCamera = null
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                mCurrentCamera = null
             }
         })
         mCameraClient?.register()
@@ -241,8 +226,8 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
      * @param device see [UsbDevice]
      */
     protected fun requestPermission(device: UsbDevice?) {
-        mRequestPermission.set(true)
         mCameraClient?.requestPermission(device)
+        mRequestPermission.set(true)
     }
 
     /**
@@ -272,7 +257,6 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
     protected fun captureImage(callBack: ICaptureCallBack, savePath: String? = null) {
         getCurrentCamera()?.captureImage(callBack, savePath)
     }
-
 
     /**
      * Get default effect
@@ -855,6 +839,7 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
 
     protected fun closeCamera() {
         getCurrentCamera()?.closeCamera()
+        getCurrentCamera()?.setCameraStateCallBack(null)
     }
 
     private fun surfaceSizeChanged(surfaceWidth: Int, surfaceHeight: Int) {
@@ -923,19 +908,19 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
 
     protected open fun getCameraRequest(): CameraRequest {
         return CameraRequest.Builder()
-            .setPreviewWidth(640)
-            .setPreviewHeight(480)
+            .setPreviewWidth(1280)
+            .setPreviewHeight(720)
             .setRenderMode(CameraRequest.RenderMode.OPENGL)
             .setDefaultRotateType(RotateType.ANGLE_0)
-            .setAudioSource(CameraRequest.AudioSource.SOURCE_SYS_MIC)
-            .setPreviewFormat(CameraRequest.PreviewFormat.FORMAT_MJPEG)
-            .setAspectRatioShow(true)
+            .setAudioSource(CameraRequest.AudioSource.SOURCE_AUTO)
+            .setAspectRatioShow(false)
             .setCaptureRawImage(false)
             .setRawPreviewData(false)
-            .create()
+            .setDefaultEffect(EffectBlackWhite(this))
+            .create();
     }
 
     companion object {
-        private const val TAG = "CameraFragment"
+        private const val TAG = "CameraActivity"
     }
 }

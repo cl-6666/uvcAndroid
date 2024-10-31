@@ -42,7 +42,7 @@
 #include "VbrTag.h"
 #include "quantize_pvt.h"
 #include <string.h>
-
+#include <stdlib.h>
 
 
 /*

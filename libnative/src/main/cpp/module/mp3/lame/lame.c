@@ -49,7 +49,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 #if defined(__FreeBSD__) && !defined(__alpha__)
 #include <floatingpoint.h>
 #endif

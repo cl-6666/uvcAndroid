@@ -154,6 +154,7 @@ blocktype_d[2]        block type to use for previous granule
 #include "fft.h"
 #include "lame-analysis.h"
 #include <string.h>
+#include <stdlib.h>
 
 #define NSFIRLEN 21
 
