@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.hardware.usb.UsbDevice
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Surface
 import android.view.SurfaceView
 import android.view.TextureView
@@ -30,6 +31,7 @@ import com.jiangdg.ausbc.callback.ICameraStateCallBack
 import com.jiangdg.ausbc.callback.ICaptureCallBack
 import com.jiangdg.ausbc.callback.IPreviewDataCallBack
 import com.jiangdg.ausbc.camera.bean.PreviewSize
+import com.jiangdg.ausbc.render.env.RotateType
 import com.jiangdg.ausbc.utils.CameraUtils
 import com.jiangdg.ausbc.utils.Logger
 import com.jiangdg.ausbc.utils.MediaUtils
@@ -44,10 +46,15 @@ import java.util.concurrent.TimeUnit
  *
  * @author Created by jiangdg on 2023/1/15
  */
-class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx, device) {
+class CameraUVC(ctx: Context, device: UsbDevice, cameraIndex: Int) : MultiCameraClient.ICamera(ctx, device, cameraIndex) {
+    private var frameRate: Int = MAX_FPS
     private var mUvcCamera: UVCCamera? = null
     private val mCameraPreviewSize by lazy {
         arrayListOf<PreviewSize>()
+    }
+
+    constructor(ctx: Context, device: UsbDevice, cameraIndex: Int, frameRate: Int): this(ctx, device, cameraIndex){
+        this.frameRate = frameRate
     }
 
     private val frameCallBack = IFrameCallback { frame ->
@@ -82,13 +89,16 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         }  else {
             mUvcCamera?.getSupportedSizeList(UVCCamera.FRAME_FORMAT_YUYV)
         }?.let { sizeList ->
-            if (mCameraPreviewSize.isEmpty()) {
+            if (sizeList.size > mCameraPreviewSize.size) {
                 mCameraPreviewSize.clear()
                 sizeList.forEach { size->
                     val width = size.width
                     val height = size.height
                     mCameraPreviewSize.add(PreviewSize(width, height))
                 }
+            }
+            if (Utils.debugCamera) {
+                Logger.i(TAG, "aspect ratio = $aspectRatio, supportedSizeList = $sizeList")
             }
             mCameraPreviewSize
         }?.onEach { size ->
@@ -99,14 +109,11 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
                 previewSizeList.add(PreviewSize(width, height))
             }
         }
-        if (Utils.debugCamera) {
-            Logger.i(TAG, "aspect ratio = $aspectRatio, getAllPreviewSizes = $previewSizeList, ")
-        }
-
         return previewSizeList
     }
 
-    override fun <T> openCameraInternal(cameraView: T) {
+    override fun <T> openCameraInternal(cameraView: T, cameraIndex: Int) {
+        //android target sdk 在android9及以上时，需要额外获取到camera权限
         if (Utils.isTargetSdkOverP(ctx) && !CameraUtils.hasCameraPermission(ctx)) {
             closeCamera()
             postStateEvent(ICameraStateCallBack.State.ERROR, "Has no CAMERA permission.")
@@ -122,7 +129,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         val request = mCameraRequest!!
         try {
             mUvcCamera = UVCCamera().apply {
-                open(mCtrlBlock)
+                open(mCtrlBlock, cameraIndex)
             }
         } catch (e: Exception) {
             closeCamera()
@@ -150,7 +157,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
                 previewSize.width,
                 previewSize.height,
                 MIN_FS,
-                MAX_FPS,
+                frameRate,
                 UVCCamera.FRAME_FORMAT_MJPEG,
                 UVCCamera.DEFAULT_BANDWIDTH
             )
@@ -171,7 +178,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
                     previewSize.width,
                     previewSize.height,
                     MIN_FS,
-                    MAX_FPS,
+                    frameRate,
                     UVCCamera.FRAME_FORMAT_YUYV,
                     UVCCamera.DEFAULT_BANDWIDTH
                 )
@@ -513,9 +520,24 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         mUvcCamera?.resetHue()
     }
 
+    /**
+     * lightBrightness 0~100
+     */
+    fun setCircleLightBrightness(lightBrightness: Int) {
+        mUvcCamera?.setCicrlLightBrightness(lightBrightness)
+    }
+
+    /**
+     * degrees 0~360
+     */
+    fun setCameraRotationDegrees(degrees: Int) {
+        mUvcCamera?.setCameraRotationDegrees(degrees)
+    }
+
+
     companion object {
         private const val TAG = "CameraUVC"
-        private const val MIN_FS = 10
-        private const val MAX_FPS = 60
+        private const val MIN_FS = 1
+        private const val MAX_FPS = 61
     }
 }

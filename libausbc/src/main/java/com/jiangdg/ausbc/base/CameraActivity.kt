@@ -238,7 +238,7 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
      * @return Inheritor assignment camera api policy
      */
     protected open fun generateCamera(ctx: Context, device: UsbDevice): MultiCameraClient.ICamera {
-        return CameraUVC(ctx, device)
+        return CameraUVC(ctx, device,0)
     }
 
     /**

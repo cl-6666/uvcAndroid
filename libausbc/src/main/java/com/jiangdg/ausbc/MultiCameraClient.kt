@@ -20,12 +20,9 @@ import com.jiangdg.ausbc.encode.muxer.Mp4Muxer
 import com.jiangdg.ausbc.render.RenderManager
 import com.jiangdg.ausbc.render.effect.AbstractEffect
 import com.jiangdg.ausbc.render.env.RotateType
-import com.jiangdg.ausbc.utils.CameraUtils
+import com.jiangdg.ausbc.utils.*
 import com.jiangdg.ausbc.utils.CameraUtils.isFilterDevice
 import com.jiangdg.ausbc.utils.CameraUtils.isUsbCamera
-import com.jiangdg.ausbc.utils.Logger
-import com.jiangdg.ausbc.utils.OpenGLUtils
-import com.jiangdg.ausbc.utils.Utils
 import com.jiangdg.ausbc.widget.IAspectRatio
 import com.jiangdg.usb.*
 import com.jiangdg.usb.DeviceFilter
@@ -251,7 +248,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
      * @property device see [UsbDevice]
      * @constructor Create camera by inherit it
      */
-    abstract class ICamera(val ctx: Context, val device: UsbDevice): Handler.Callback,
+    abstract class ICamera(val ctx: Context, val device: UsbDevice, val cameraIndex: Int): Handler.Callback,
         H264EncodeProcessor.OnEncodeReadyListener {
         private var mMediaMuxer: Mp4Muxer? = null
         private var mEncodeDataCallBack: IEncodeDataCallBack? = null
@@ -307,7 +304,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
                     }.also { view->
                         isNeedGLESRender = isGLESRender(renderMode == CameraRequest.RenderMode.OPENGL)
                         if (! isNeedGLESRender && view != null) {
-                            openCameraInternal(view)
+                            openCameraInternal(view, cameraIndex)
                             return true
                         }
                         // use opengl render
@@ -330,7 +327,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
                                     postStateEvent(ICameraStateCallBack.State.ERROR, "create camera surface failed")
                                     return
                                 }
-                                openCameraInternal(surfaceTexture)
+                                openCameraInternal(surfaceTexture, cameraIndex)
                             }
                         })
                         mRenderManager?.setRotateType(mCameraRequest!!.defaultRotateType)
@@ -383,7 +380,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
             return true
         }
 
-        protected abstract fun <T> openCameraInternal(cameraView: T)
+        protected abstract fun <T> openCameraInternal(cameraView: T, cameraIndex: Int)
         protected abstract fun closeCameraInternal()
         protected abstract fun captureImageInternal(savePath: String?, callback: ICaptureCallBack)
 

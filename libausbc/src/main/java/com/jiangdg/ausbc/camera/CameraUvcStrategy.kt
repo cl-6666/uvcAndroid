@@ -130,7 +130,7 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
             val previewHeight = request.previewHeight
             request.cameraId = device.deviceId.toString()
             mUVCCamera = UVCCamera().apply {
-                open(ctrlBlock)
+                open(ctrlBlock, 0)
             }
             if (! isPreviewSizeSupported(previewWidth, previewHeight)) {
                 postCameraStatus(CameraStatus(CameraStatus.ERROR_PREVIEW_SIZE, "unsupported preview size(${request.previewWidth}, ${request.previewHeight})"))

@@ -1,26 +1,23 @@
 package com.maxvision.uvcandroid
 
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbManager
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.hjq.permissions.OnPermissionCallback
+import com.hjq.permissions.Permission
+import com.hjq.permissions.XXPermissions
+import com.jiangdg.ausbc.utils.ToastUtils.show
+import com.maxvision.uvcandroid.fragment.PalmLinesFragment
 import com.maxvision.uvcandroid.util.navigateTo
 
 class StartActivity : AppCompatActivity() {
 
-    private val ACTION_USB_PERMISSION = "com.example.USB_PERMISSION"
-    private lateinit var usbManager: UsbManager
+
+    private var palmLinesFragment: PalmLinesFragment? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,50 +28,56 @@ class StartActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        usbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        // 创建 PendingIntent
-        val permissionIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_USB_PERMISSION), 0)
-        // 注册广播接收器
-        registerReceiver(usbReceiver, IntentFilter(ACTION_USB_PERMISSION))
-        // 获取连接的 USB 设备列表
-        val deviceList = usbManager.deviceList
-        for (device in deviceList.values) {
-            // 请求 USB 权限
-            usbManager.requestPermission(device, permissionIntent)
-        }
+
+        permissionAcquisition()
     }
 
     fun oneClick(view: View) {
         navigateTo<MainActivity>()
     }
 
-    fun manyClick(view: View) {}
+    fun manyClick(view: View) {
+        palmLines()
+    }
 
 
-    private val usbReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            val action = intent?.action
-            if (ACTION_USB_PERMISSION == action) {
-                synchronized(this) {
-                    val usbDevice: UsbDevice? = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if (usbDevice != null) {
-                            // 这里可以开始与 USB 设备的通信
-                            Log.d("USB", "Permission granted for device: ${usbDevice.deviceName}")
-                        } else {
-
-                        }
-                    } else {
-                        Log.d("USB", "Permission denied for device: ${usbDevice?.deviceName}")
-                    }
-                }
-            }
+    private fun palmLines() {
+        // 检查是否已经有同名 Fragment 存在
+        val existingFragment = supportFragmentManager.findFragmentByTag("LogicFragment")
+        if (existingFragment == null) {
+            palmLinesFragment = PalmLinesFragment.newInstance("serialId")
+            supportFragmentManager.beginTransaction()
+                .add(R.id.cameraViewContainer, palmLinesFragment!!, "LogicFragment")
+                .commit()
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // 取消注册广播接收器
-        unregisterReceiver(usbReceiver)
+
+    private fun permissionAcquisition() {
+        XXPermissions.with(this)
+            .permission(Permission.CAMERA)
+            .permission(Permission.Group.STORAGE)
+            .unchecked()
+            .request(object : OnPermissionCallback {
+                override fun onGranted(permissions: MutableList<String>, allGranted: Boolean) {
+                    if (!allGranted) {
+                        show("获取部分权限成功，但部分权限未正常授予")
+                        return
+                    }
+                }
+
+                override fun onDenied(permissions: MutableList<String>, doNotAskAgain: Boolean) {
+                    if (doNotAskAgain) {
+                        show("被永久拒绝授权，请手动授予录音和日历权限")
+                        // 如果是被永久拒绝就跳转到应用权限系统设置页面
+                        XXPermissions.startPermissionActivity(
+                            this@StartActivity,
+                            permissions
+                        )
+                    } else {
+                        show("获取相机以及存储权限失败")
+                    }
+                }
+            })
     }
 }
