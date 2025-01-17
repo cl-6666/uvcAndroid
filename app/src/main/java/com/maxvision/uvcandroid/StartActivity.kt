@@ -72,6 +72,7 @@ class StartActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onDestroy() {
         super.onDestroy()
         // 取消注册广播接收器
