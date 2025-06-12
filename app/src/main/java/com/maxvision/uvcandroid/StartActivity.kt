@@ -40,7 +40,6 @@ class StartActivity : AppCompatActivity() {
         palmLines()
     }
 
-
     private fun palmLines() {
         // 检查是否已经有同名 Fragment 存在
         val existingFragment = supportFragmentManager.findFragmentByTag("LogicFragment")
