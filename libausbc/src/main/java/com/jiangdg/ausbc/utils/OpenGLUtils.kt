@@ -43,4 +43,32 @@ object OpenGLUtils {
             Logger.e(TAG, msg)
         }
     }
+
+
+    fun rotateYUV420Degree270(data: ByteArray, imageWidth: Int, imageHeight: Int): ByteArray {
+        val yuv = ByteArray(imageWidth * imageHeight * 3 / 2)
+        var i = 0
+
+        // Rotate the Y luma
+        for (x in imageWidth - 1 downTo 0) {
+            for (y in 0 until imageHeight) {
+                yuv[i++] = data[y * imageWidth + x]
+            }
+        }
+
+        // Rotate the UV color components
+        val uvStart = imageWidth * imageHeight
+        val uvHeight = imageHeight / 2
+        val uvWidth = imageWidth / 2
+        val uvRowStride = imageWidth
+
+        for (x in uvWidth - 1 downTo 0) {
+            for (y in 0 until uvHeight) {
+                yuv[i++] = data[uvStart + y * uvRowStride + 2 * x] // U component
+                yuv[i++] = data[uvStart + y * uvRowStride + 2 * x + 1] // V component
+            }
+        }
+
+        return yuv
+    }
 }

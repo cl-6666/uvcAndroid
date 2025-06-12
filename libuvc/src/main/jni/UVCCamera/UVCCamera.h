@@ -182,7 +182,7 @@ public:
 	UVCCamera();
 	~UVCCamera();
 
-	int connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs);
+    int connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs, int videoIndex);
 	int release();
 
 	int setStatusCallback(JNIEnv *env, jobject status_callback_obj);

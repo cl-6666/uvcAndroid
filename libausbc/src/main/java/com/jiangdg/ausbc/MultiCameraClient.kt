@@ -38,7 +38,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingDeque
 import kotlin.math.abs
 
-/** Multi-road camera client
+/** 多路摄像头客户端
  *
  * @author Created by jiangdg on 2022/7/18
  *      Modified for v3.3.0 by jiangdg on 2023/1/15
@@ -251,7 +251,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
      * @property device see [UsbDevice]
      * @constructor Create camera by inherit it
      */
-    abstract class ICamera(val ctx: Context, val device: UsbDevice): Handler.Callback,
+    abstract class ICamera(val ctx: Context, val device: UsbDevice,val cameraIndex: Int): Handler.Callback,
         H264EncodeProcessor.OnEncodeReadyListener {
         private var mMediaMuxer: Mp4Muxer? = null
         private var mEncodeDataCallBack: IEncodeDataCallBack? = null
@@ -307,7 +307,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
                     }.also { view->
                         isNeedGLESRender = isGLESRender(renderMode == CameraRequest.RenderMode.OPENGL)
                         if (! isNeedGLESRender && view != null) {
-                            openCameraInternal(view)
+                            openCameraInternal(view,cameraIndex)
                             return true
                         }
                         // use opengl render
@@ -330,7 +330,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
                                     postStateEvent(ICameraStateCallBack.State.ERROR, "create camera surface failed")
                                     return
                                 }
-                                openCameraInternal(surfaceTexture)
+                                openCameraInternal(surfaceTexture,cameraIndex)
                             }
                         })
                         mRenderManager?.setRotateType(mCameraRequest!!.defaultRotateType)
@@ -383,7 +383,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
             return true
         }
 
-        protected abstract fun <T> openCameraInternal(cameraView: T)
+        protected abstract fun <T> openCameraInternal(cameraView: T,cameraIndex: Int)
         protected abstract fun closeCameraInternal()
         protected abstract fun captureImageInternal(savePath: String?, callback: ICaptureCallBack)
 
@@ -431,7 +431,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
         private fun isGLESRender(isGlesRenderOpen: Boolean): Boolean =isGlesRenderOpen && OpenGLUtils.isGlEsSupported(ctx)
 
         /**
-         * Init encode processor
+         * 初始化编码处理器
          *
          * @param previewWidth camera opened preview width
          * @param previewHeight camera opened preview height
@@ -463,7 +463,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
         }
 
         /**
-         * Put video data
+         * 放入视频数据
          *
          * @param data NV21 raw data
          */
@@ -532,7 +532,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
         }
 
         /**
-         * Set render size
+         * 设置渲染大小
          *
          * @param width surface width
          * @param height surface height
@@ -730,7 +730,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
         }
 
         /**
-         * Update resolution
+         * 更新分辨率
          *
          * @param width camera preview width, see [PreviewSize]
          * @param height camera preview height, [PreviewSize]

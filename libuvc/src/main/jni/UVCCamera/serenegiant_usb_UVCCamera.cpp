@@ -143,7 +143,7 @@ static void nativeDestroy(JNIEnv *env, jobject thiz,
 static jint nativeConnect(JNIEnv *env, jobject thiz,
 	ID_TYPE id_camera,
 	jint vid, jint pid, jint fd,
-	jint busNum, jint devAddr, jstring usbfs_str) {
+	jint busNum, jint devAddr, jstring usbfs_str,jint videoIndex) {
 
 	ENTER();
 	int result = JNI_ERR;
@@ -151,7 +151,7 @@ static jint nativeConnect(JNIEnv *env, jobject thiz,
 	const char *c_usbfs = env->GetStringUTFChars(usbfs_str, JNI_FALSE);
 	if (LIKELY(camera && (fd > 0))) {
 //		libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_DEBUG);
-		result =  camera->connect(vid, pid, fd, busNum, devAddr, c_usbfs);
+		result =  camera->connect(vid, pid, fd, busNum, devAddr, c_usbfs,videoIndex);
 	}
 	env->ReleaseStringUTFChars(usbfs_str, c_usbfs);
 	RETURN(result, jint);
@@ -2029,8 +2029,8 @@ static JNINativeMethod methods[] = {
 	{ "nativeCreate",					"()J", (void *) nativeCreate },
 	{ "nativeDestroy",					"(J)V", (void *) nativeDestroy },
 	//
-	{ "nativeConnect",					"(JIIIIILjava/lang/String;)I", (void *) nativeConnect },
-	{ "nativeRelease",					"(J)I", (void *) nativeRelease },
+    { "nativeConnect",					"(JIIIIILjava/lang/String;I)I", (void *) nativeConnect },
+    { "nativeRelease",					"(J)I", (void *) nativeRelease },
 
 	{ "nativeSetStatusCallback",		"(JLcom/jiangdg/uvc/IStatusCallback;)I", (void *) nativeSetStatusCallback },
 	{ "nativeSetButtonCallback",		"(JLcom/jiangdg/uvc/IButtonCallback;)I", (void *) nativeSetButtonCallback },

@@ -238,11 +238,11 @@ abstract class CameraActivity: BaseActivity(), ICameraStateCallBack {
      * @return Inheritor assignment camera api policy
      */
     protected open fun generateCamera(ctx: Context, device: UsbDevice): MultiCameraClient.ICamera {
-        return CameraUVC(ctx, device)
+        return CameraUVC(ctx, device,0)
     }
 
     /**
-     * Get default camera
+     * 获取默认摄像头
      *
      * @return Open camera by default, should be [UsbDevice]
      */

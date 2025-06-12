@@ -44,10 +44,15 @@ import java.util.concurrent.TimeUnit
  *
  * @author Created by jiangdg on 2023/1/15
  */
-class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx, device) {
+class CameraUVC(ctx: Context, device: UsbDevice, cameraIndex: Int) : MultiCameraClient.ICamera(ctx, device,cameraIndex) {
+    private var frameRate: Int = MAX_FPS
     private var mUvcCamera: UVCCamera? = null
     private val mCameraPreviewSize by lazy {
         arrayListOf<PreviewSize>()
+    }
+
+    constructor(ctx: Context, device: UsbDevice, cameraIndex: Int, frameRate: Int): this(ctx, device, cameraIndex){
+        this.frameRate = frameRate
     }
 
     private val frameCallBack = IFrameCallback { frame ->
@@ -106,7 +111,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         return previewSizeList
     }
 
-    override fun <T> openCameraInternal(cameraView: T) {
+    override fun <T> openCameraInternal(cameraView: T,cameraIndex: Int) {
         if (Utils.isTargetSdkOverP(ctx) && !CameraUtils.hasCameraPermission(ctx)) {
             closeCamera()
             postStateEvent(ICameraStateCallBack.State.ERROR, "Has no CAMERA permission.")
@@ -122,7 +127,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         val request = mCameraRequest!!
         try {
             mUvcCamera = UVCCamera().apply {
-                open(mCtrlBlock)
+                open(mCtrlBlock,cameraIndex)
             }
         } catch (e: Exception) {
             closeCamera()
@@ -216,6 +221,8 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         }
     }
 
+
+
     override fun closeCameraInternal() {
         postStateEvent(ICameraStateCallBack.State.CLOSED)
         isPreviewed = false
@@ -289,14 +296,14 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Is mic supported
+     * 是否支持麦克风
      *
      * @return true camera support mic
      */
     fun isMicSupported() = CameraUtils.isCameraContainsMic(this.device)
 
     /**
-     * Send camera command
+     * 发送摄像头命令
      *
      * This method cannot be verified, please use it with caution
      */
@@ -307,7 +314,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set auto focus
+     * 设置自动对焦
      *
      * @param enable true enable auto focus
      */
@@ -316,21 +323,21 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Get auto focus
+     * 获得自动对焦
      *
      * @return true enable auto focus
      */
     fun getAutoFocus() = mUvcCamera?.autoFocus
 
     /**
-     * Reset auto focus
+     * 重置自动对焦
      */
     fun resetAutoFocus() {
         mUvcCamera?.resetFocus()
     }
 
     /**
-     * Set auto white balance
+     * 设置自动白平衡
      *
      * @param autoWhiteBalance true enable auto white balance
      */
@@ -339,14 +346,14 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Get auto white balance
+     * 获得自动白平衡
      *
      * @return true enable auto white balance
      */
     fun getAutoWhiteBalance() = mUvcCamera?.autoWhiteBlance
 
     /**
-     * Set zoom
+     * 设置缩放
      *
      * @param zoom zoom value, 0 means reset
      */
@@ -355,19 +362,19 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Get zoom
+     * 获取缩放
      */
     fun getZoom() = mUvcCamera?.zoom
 
     /**
-     * Reset zoom
+     * 重置缩放
      */
     fun resetZoom() {
         mUvcCamera?.resetZoom()
     }
 
     /**
-     * Set gain
+     * 设置增益
      *
      * @param gain gain value, 0 means reset
      */
@@ -376,19 +383,19 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Get gain
+     * 获得增益
      */
     fun getGain() = mUvcCamera?.gain
 
     /**
-     * Reset gain
+     * 重置增益
      */
     fun resetGain() {
         mUvcCamera?.resetGain()
     }
 
     /**
-     * Set gamma
+     * 设置gamma
      *
      * @param gamma gamma value, 0 means reset
      */
@@ -409,7 +416,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set brightness
+     * 设置亮度
      *
      * @param brightness brightness value, 0 means reset
      */
@@ -430,7 +437,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set contrast
+     * 设置对比度
      *
      * @param contrast contrast value, 0 means reset
      */
@@ -451,7 +458,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set sharpness
+     * 设置锐度
      *
      * @param sharpness sharpness value, 0 means reset
      */
@@ -472,7 +479,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set saturation
+     * 设置饱和度
      *
      * @param saturation saturation value, 0 means reset
      */
@@ -493,7 +500,7 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
     }
 
     /**
-     * Set hue
+     * 设置色调
      *
      * @param hue hue value, 0 means reset
      */

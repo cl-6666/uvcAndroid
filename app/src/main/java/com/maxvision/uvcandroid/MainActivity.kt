@@ -2,6 +2,7 @@ package com.maxvision.uvcandroid
 
 import android.content.Context
 import android.hardware.usb.UsbDevice
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -11,29 +12,32 @@ import androidx.databinding.DataBindingUtil
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.base.CameraActivity
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
+import com.jiangdg.ausbc.callback.IPreviewDataCallBack
 import com.jiangdg.ausbc.camera.CameraUVC
 import com.jiangdg.ausbc.camera.bean.CameraRequest
 import com.jiangdg.ausbc.render.env.RotateType
 import com.jiangdg.ausbc.utils.Logger
 import com.jiangdg.ausbc.widget.AspectRatioTextureView
+import com.jiangdg.ausbc.widget.AspectRatioTextureView2
 import com.jiangdg.ausbc.widget.IAspectRatio
 import com.maxvision.uvcandroid.databinding.ActivityMainBinding
 
 class MainActivity :  CameraActivity() {
 
 
-    private val PREVIEW_WIDTH = 1920
-    private val PREVIEW_HEIGHT = 1080
+    val PREVIEW_WIDTH = 1280
+    val PREVIEW_HEIGHT = 720
 
     private lateinit var mViewBinding: ActivityMainBinding
 
-    private val mDeviceInformation = arrayOf("Palm Vein Collector", "UVC", "LRCP Technology Co., Ltd.", "LRCP USB01")
+    private val mDeviceInformation = arrayOf("Palm Vein Collector", "UVC RGB", "LRCP Technology Co., Ltd.", "LRCP USB01")
 
 
 
 
     override fun getCameraView(): IAspectRatio? {
-        val aspectRatioTextureView = AspectRatioTextureView(this)
+        val aspectRatioTextureView = AspectRatioTextureView2(this)
+//        aspectRatioTextureView.setRotationAngle(180)
         aspectRatioTextureView.setAspectRatio(PREVIEW_WIDTH, PREVIEW_HEIGHT)
         return aspectRatioTextureView
     }
@@ -47,7 +51,6 @@ class MainActivity :  CameraActivity() {
     }
     override fun initView() {
         super.initView()
-        enableEdgeToEdge()
         // 设置 Toolbar
         setSupportActionBar(mViewBinding.toolbar)
         // 显示返回按钮
@@ -74,6 +77,16 @@ class MainActivity :  CameraActivity() {
         when (code) {
             ICameraStateCallBack.State.OPENED -> {
                 Logger.i("Camera", "打开成功")
+                self.addPreviewDataCallBack(object : IPreviewDataCallBack {
+                    override fun onPreviewData(
+                        data: ByteArray?,
+                        width: Int,
+                        height: Int,
+                        format: IPreviewDataCallBack.DataFormat
+                    ) {
+//                       Log.i("TAG","当前的视频流："+data?.size)
+                    }
+                })
             }
 
             ICameraStateCallBack.State.CLOSED -> {
@@ -90,14 +103,14 @@ class MainActivity :  CameraActivity() {
     override fun getGravity(): Int = Gravity.CENTER
 
     override fun generateCamera(ctx: Context, device: UsbDevice): MultiCameraClient.ICamera {
-        return CameraUVC(ctx, device)
+        return CameraUVC(ctx, device,1)
     }
 
     override fun getDefaultCamera(): UsbDevice? {
-        val creatureType = 1
+        val creatureType = 0
         var names: Array<String> = arrayOf()
         when (creatureType) {
-            1 -> {
+            0 -> {
                 names = mDeviceInformation
             }
         }

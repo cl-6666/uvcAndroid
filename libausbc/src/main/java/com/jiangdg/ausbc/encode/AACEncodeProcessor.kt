@@ -33,7 +33,7 @@ import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.Exception
 
-/** AAC encode by MediaCodec
+/** MediaCodec的AAC编码
  *
  * @author Created by jiangdg on 2022/2/10
  */
@@ -142,7 +142,7 @@ class AACEncodeProcessor(strategy: IAudioStrategy? = null) : AbstractProcessor()
     }
 
     /**
-     * Play audio start
+     * 播放音频开始
      *
      * @param callBack play status call back, see [IPlayCallBack]
      */

@@ -223,7 +223,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Get current opened camera
+     * 获取当前打开的摄像头
      *
      * @return current camera, see [MultiCameraClient.ICamera]
      */
@@ -237,7 +237,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Request permission
+     * 请求权限
      *
      * @param device see [UsbDevice]
      */
@@ -247,25 +247,25 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Generate camera
+     * 生成摄像头
      *
      * @param ctx context [Context]
      * @param device Usb device, see [UsbDevice]
      * @return Inheritor assignment camera api policy
      */
     protected open fun generateCamera(ctx: Context, device: UsbDevice): MultiCameraClient.ICamera {
-        return CameraUVC(ctx, device)
+        return CameraUVC(ctx, device,0)
     }
 
     /**
-     * Get default camera
+     * 获取默认摄像头
      *
      * @return Open camera by default, should be [UsbDevice]
      */
     protected open fun getDefaultCamera(): UsbDevice? = null
 
     /**
-     * Capture image
+     * 拍摄图像
      *
      * @param callBack capture status, see [ICaptureCallBack]
      * @param savePath custom image path
@@ -276,12 +276,12 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
 
 
     /**
-     * Get default effect
+     * 获取默认效果
      */
     protected fun getDefaultEffect() = getCurrentCamera()?.getDefaultEffect()
 
     /**
-     * Switch camera
+     * 切换摄像头
      *
      * @param usbDevice camera usb device
      */
@@ -296,14 +296,14 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Is camera opened
+     * 摄像头是否打开
      *
      * @return camera open status
      */
     protected fun isCameraOpened() = getCurrentCamera()?.isCameraOpened()  ?: false
 
     /**
-     * Update resolution
+     * 更新分辨率
      *
      * @param width camera preview width
      * @param height camera preview height
@@ -313,7 +313,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Get all preview sizes
+     * 获取所有预览尺寸
      *
      * @param aspectRatio preview size aspect ratio,
      *                      null means getting all preview sizes
@@ -321,7 +321,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     protected fun getAllPreviewSizes(aspectRatio: Double? = null) = getCurrentCamera()?.getAllPreviewSizes(aspectRatio)
 
     /**
-     * Add render effect
+     * 添加渲染效果
      *
      * @param effect a effect will be added, only enable opengl render worked, see [AbstractEffect]
      */
@@ -330,7 +330,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Remove render effect
+     * 删除渲染效果
      *
      * @param effect a effect will be removed, only enable opengl render worked, see [AbstractEffect]
      */
@@ -339,7 +339,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Update render effect
+     * 更新渲染效果
      *
      * @param classifyId effect classify id
      * @param effect new effect, null means set none
@@ -349,21 +349,21 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Start capture H264 & AAC only
+     * 仅开始捕获H264和AAC
      */
     protected fun captureStreamStart() {
         getCurrentCamera()?.captureStreamStart()
     }
 
     /**
-     * Stop capture H264 & AAC only
+     * 仅停止捕获H264和AAC
      */
     protected fun captureStreamStop() {
         getCurrentCamera()?.captureStreamStop()
     }
 
     /**
-     * Add encode data call back
+     * 添加编码数据回调
      *
      * @param callBack encode data call back, see [IEncodeDataCallBack]
      */
@@ -372,7 +372,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Add preview data call back
+     * 添加预览数据回调
      *
      * @param callBack preview data call back, see [IPreviewDataCallBack]
      */
@@ -381,7 +381,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Remove preview data call back
+     * 删除预览数据回调
      *
      * @param callBack preview data call back, see [IPreviewDataCallBack]
      */
@@ -390,7 +390,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Capture video start
+     * 开始拍摄视频
      *
      * @param callBack capture status, see [ICaptureCallBack]
      * @param path custom save path
@@ -401,14 +401,14 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Capture video stop
+     * 捕获视频停止
      */
     protected fun captureVideoStop() {
         getCurrentCamera()?.captureVideoStop()
     }
 
     /**
-     * Capture audio start
+     * 开始捕获音频
      *
      * @param callBack capture status, see [ICaptureCallBack]
      * @param path custom save path
@@ -418,14 +418,14 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Capture audio stop
+     * 捕获音频停止
      */
     protected fun captureAudioStop() {
         getCurrentCamera()?.captureAudioStop()
     }
 
     /**
-     * Start play mic
+     * 开始播放麦克风
      *
      * @param callBack play mic in real-time, see [IPlayCallBack]
      */
@@ -434,14 +434,14 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Stop play mic
+     * 停止播放麦克风
      */
     protected fun stopPlayMic() {
         getCurrentCamera()?.stopPlayMic()
     }
 
     /**
-     * Get current preview size
+     * 获取当前预览大小
      *
      * @return camera preview size, see [PreviewSize]
      */
@@ -452,7 +452,7 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /**
-     * Rotate camera angle
+     * 旋转相机角度
      *
      * @param type rotate angle, null means rotating nothing
      * see [RotateType.ANGLE_90], [RotateType.ANGLE_270],...etc.
@@ -462,9 +462,9 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     }
 
     /***********************************************************************************************/
-    /*********************************Camera parameter control *************************************/
+    /*********************************摄像头参数控制 *************************************/
     /**
-     * Send camera command of uvc camera
+     * 发送uvc摄像头的摄像头指令
      *
      * @param command hex value
      * @return control result

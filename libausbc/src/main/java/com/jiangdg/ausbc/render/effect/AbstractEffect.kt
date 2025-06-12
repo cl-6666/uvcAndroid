@@ -18,21 +18,21 @@ package com.jiangdg.ausbc.render.effect
 import android.content.Context
 import com.jiangdg.ausbc.render.internal.AbstractFboRender
 
-/** abstract effect class, extended from AbstractFboRender
+/** 抽象效果类，从AbstractFboRender扩展而来
  *
  * @author Created by jiangdg on 2022/1/26
  */
 abstract class AbstractEffect(ctx: Context) : AbstractFboRender(ctx) {
 
     /**
-     * Get effect id
+     * 获取效果id
      *
      * @return effect id
      */
     abstract fun getId(): Int
 
     /**
-     * Get classify id
+     * 获取分类id
      *
      * @return effect classify id
      */

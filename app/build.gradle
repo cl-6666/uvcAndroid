@@ -52,6 +52,10 @@ dependencies {
 
 //    implementation 'com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.3.3'
 //    implementation 'com.github.cl-6666:uvcAndroid:v1.1.5'
+    implementation 'com.github.getActivity:XXPermissions:20.0'
+
+    implementation "com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.50"
+
 
     implementation project(':libausbc')
 }

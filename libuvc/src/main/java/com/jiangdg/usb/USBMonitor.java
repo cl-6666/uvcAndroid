@@ -48,7 +48,6 @@ import com.jiangdg.utils.XLogWrapper;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -58,7 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class USBMonitor {
 
-	public static boolean DEBUG = false;	// TODO set false on production
+	public static boolean DEBUG = true;	// TODO set false on production
 	private static final String TAG = "USBMonitor";
 
 	private static final String ACTION_USB_PERMISSION_BASE = "com.serenegiant.USB_PERMISSION.";
@@ -67,7 +66,7 @@ public final class USBMonitor {
 	public static final String ACTION_USB_DEVICE_ATTACHED = "android.hardware.usb.action.USB_DEVICE_ATTACHED";
 
 	/**
-	 * openしているUsbControlBlock
+	 * open正开启的UsbControlBlock
 	 */
 	private final ConcurrentHashMap<UsbDevice, UsbControlBlock> mCtrlBlocks = new ConcurrentHashMap<UsbDevice, UsbControlBlock>();
 	private final SparseArray<WeakReference<UsbDevice>> mHasPermissions = new SparseArray<WeakReference<UsbDevice>>();
@@ -79,7 +78,7 @@ public final class USBMonitor {
 	private List<DeviceFilter> mDeviceFilters = new ArrayList<DeviceFilter>();
 
 	/**
-	 * コールバックをワーカースレッドで呼び出すためのハンドラー
+	 * 用于在工作线程中调用回调的handler
 	 */
 	private final Handler mAsyncHandler;
 	private volatile boolean destroyed;
@@ -762,11 +761,11 @@ public final class USBMonitor {
 		@Override
 		public String toString() {
 			return String.format("UsbDevice:usb_version=%s,manufacturer=%s,product=%s,version=%s,serial=%s",
-				usb_version != null ? usb_version : "",
-				manufacturer != null ? manufacturer : "",
-				product != null ? product : "",
-				version != null ? version : "",
-				serial != null ? serial : "");
+					usb_version != null ? usb_version : "",
+					manufacturer != null ? manufacturer : "",
+					product != null ? product : "",
+					version != null ? version : "",
+					serial != null ? serial : "");
 		}
 	}
 
@@ -874,9 +873,9 @@ public final class USBMonitor {
 		String result = null;
 		for (int i = 1; i <= languageCount; i++) {
 			int ret = connection.controlTransfer(
-				USB_REQ_STANDARD_DEVICE_GET, // USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE
-				USB_REQ_GET_DESCRIPTOR,
-				(USB_DT_STRING << 8) | id, languages[i], work, 256, 0);
+					USB_REQ_STANDARD_DEVICE_GET, // USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE
+					USB_REQ_GET_DESCRIPTOR,
+					(USB_DT_STRING << 8) | id, languages[i], work, 256, 0);
 			if ((ret > 2) && (work[0] == ret) && (work[1] == USB_DT_STRING)) {
 				// skip first two bytes(bLength & bDescriptorType), and copy the rest to the string
 				try {
@@ -957,11 +956,11 @@ public final class USBMonitor {
 				// controlTransfer(int requestType, int request, int value, int index, byte[] buffer, int length, int timeout)
 				try {
 					int result = connection.controlTransfer(
-						USB_REQ_STANDARD_DEVICE_GET, // USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE
-	    				USB_REQ_GET_DESCRIPTOR,
-	    				(USB_DT_STRING << 8) | 0, 0, languages, 256, 0);
+							USB_REQ_STANDARD_DEVICE_GET, // USB_DIR_IN | USB_TYPE_STANDARD | USB_RECIP_DEVICE
+							USB_REQ_GET_DESCRIPTOR,
+							(USB_DT_STRING << 8) | 0, 0, languages, 256, 0);
 					if (result > 0) {
-	        			languageCount = (result - 2) / 2;
+						languageCount = (result - 2) / 2;
 					}
 					if (languageCount > 0) {
 						if (TextUtils.isEmpty(info.manufacturer)) {
@@ -1394,7 +1393,7 @@ public final class USBMonitor {
 
 //		@Override
 //		protected void finalize() throws Throwable {
-///			close();
+		///			close();
 //			super.finalize();
 //		}
 

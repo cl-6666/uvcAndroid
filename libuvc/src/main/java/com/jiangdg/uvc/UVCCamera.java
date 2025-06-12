@@ -26,6 +26,7 @@ package com.jiangdg.uvc;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
@@ -124,8 +125,8 @@ public class UVCCamera {
 	}
 
 	private UsbControlBlock mCtrlBlock;
-    protected long mControlSupports;			// カメラコントロールでサポートしている機能フラグ
-    protected long mProcSupports;				// プロセッシングユニットでサポートしている機能フラグ
+    protected long mControlSupports;			// 相机控制支持的功能标志
+    protected long mProcSupports;				// 处理单元支持的功能标志
     protected int mCurrentFrameFormat = FRAME_FORMAT_MJPEG;
 	protected int mCurrentWidth = 640, mCurrentHeight = 480;
 	protected float mCurrentBandwidthFactor = DEFAULT_BANDWIDTH;
@@ -181,11 +182,11 @@ public class UVCCamera {
 	}
 
     /**
-     * connect to a UVC camera
-     * USB permission is necessary before this method is called
+     * 连接到UVC相机
+     * 调用此方法之前需要USB权限
      * @param ctrlBlock
      */
-    public synchronized void open(final UsbControlBlock ctrlBlock) {
+    public synchronized void open(final UsbControlBlock ctrlBlock,final int cameraIndex) {
     	int result = -2;
 		StringBuilder sb = new StringBuilder();
 		close();
@@ -196,7 +197,7 @@ public class UVCCamera {
 				mCtrlBlock.getFileDescriptor(),
 				mCtrlBlock.getBusNum(),
 				mCtrlBlock.getDevNum(),
-				getUSBFSName(mCtrlBlock));
+				getUSBFSName(mCtrlBlock),cameraIndex);
 			sb.append("调用nativeConnect返回值："+result);
 //			long id_camera, int venderId, int productId, int fileDescriptor, int busNum, int devAddr, String usbfs
 		} catch (final Exception e) {
@@ -230,7 +231,7 @@ public class UVCCamera {
     }
 
 	/**
-	 * set status callback
+	 * 设置状态回调
 	 * @param callback
 	 */
 	public void setStatusCallback(final IStatusCallback callback) {
@@ -240,7 +241,7 @@ public class UVCCamera {
 	}
 
 	/**
-	 * set button callback
+	 *设置按钮回调
 	 * @param callback
 	 */
 	public void setButtonCallback(final IButtonCallback callback) {
@@ -300,7 +301,7 @@ public class UVCCamera {
 	}
 
 	/**
-	 * Set preview size and preview mode
+	 * 设置预览大小和预览模式
 	 * @param width
 	   @param height
 	 */
@@ -309,7 +310,7 @@ public class UVCCamera {
 	}
 
 	/**
-	 * Set preview size and preview mode
+	 * 设置预览大小和预览模式
 	 * @param width
 	 * @param height
 	 * @param frameFormat either FRAME_FORMAT_YUYV(0) or FRAME_FORMAT_MJPEG(1)
@@ -330,7 +331,7 @@ public class UVCCamera {
 	}
 
 	/**
-	 * Set preview size and preview mode
+	 * 设置预览大小和预览模式
 	 * @param width
 	 * @param height
 	 * @param min_fps
@@ -417,7 +418,7 @@ public class UVCCamera {
     }
 
     /**
-     * set preview surface with Surface
+     * 使用surface设置预览曲面
      * @param surface
      */
     public synchronized void setPreviewDisplay(final Surface surface) {
@@ -1070,7 +1071,7 @@ public class UVCCamera {
 	private final native long nativeCreate();
 	private final native void nativeDestroy(final long id_camera);
 
-	private final native int nativeConnect(long id_camera, int venderId, int productId, int fileDescriptor, int busNum, int devAddr, String usbfs);
+	private static final native int nativeConnect(long id_camera, int venderId, int productId, int fileDescriptor, int busNum, int devAddr, String usbfs,int videoIndex);
 	private static final native int nativeRelease(final long id_camera);
 
 	private static final native int nativeSetStatusCallback(final long mNativePtr, final IStatusCallback callback);

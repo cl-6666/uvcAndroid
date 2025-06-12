@@ -20,6 +20,7 @@ import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import com.jiangdg.ausbc.R
 import com.jiangdg.ausbc.callback.IDeviceConnectCallBack
 import com.jiangdg.ausbc.callback.IPreviewDataCallBack
@@ -130,7 +131,7 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
             val previewHeight = request.previewHeight
             request.cameraId = device.deviceId.toString()
             mUVCCamera = UVCCamera().apply {
-                open(ctrlBlock)
+                open(ctrlBlock,0)
             }
             if (! isPreviewSizeSupported(previewWidth, previewHeight)) {
                 postCameraStatus(CameraStatus(CameraStatus.ERROR_PREVIEW_SIZE, "unsupported preview size(${request.previewWidth}, ${request.previewHeight})"))
@@ -784,6 +785,7 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
                 frame.position(0)
                 val data = ByteArray(capacity())
                 get(data)
+                Log.i("TAG","执行了，，，，，，")
                 cb.onPreviewData(data, getRequest()!!.previewWidth, getRequest()!!.previewHeight,IPreviewDataCallBack.DataFormat.NV21)
                 if (mNV21DataQueue.size >= MAX_NV21_DATA) {
                     mNV21DataQueue.removeLast()

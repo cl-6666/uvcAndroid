@@ -134,57 +134,57 @@ void UVCCamera::clearCameraParams() {
 /**
  * カメラへ接続する
  */
-int UVCCamera::connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs) {
-	ENTER();
-	uvc_error_t result = UVC_ERROR_BUSY;
-	if (!mDeviceHandle && fd) {
-		if (mUsbFs)
-			free(mUsbFs);
-		mUsbFs = strdup(usbfs);
-		if (UNLIKELY(!mContext)) {
-			result = uvc_init2(&mContext, NULL, mUsbFs);
+int UVCCamera::connect(int vid, int pid, int fd, int busnum, int devaddr, const char *usbfs,int videoIndex) {
+    ENTER();
+    uvc_error_t result = UVC_ERROR_BUSY;
+    if (!mDeviceHandle && fd) {
+        if (mUsbFs)
+            free(mUsbFs);
+        mUsbFs = strdup(usbfs);
+        if (UNLIKELY(!mContext)) {
+            result = uvc_init2(&mContext, NULL, mUsbFs); //  /dev/bus/usb
 //			libusb_set_debug(mContext->usb_ctx, LIBUSB_LOG_LEVEL_DEBUG);
-			if (UNLIKELY(result < 0)) {
-				LOGD("failed to init libuvc");
-				RETURN(result, int);
-			}
-		}
-		// カメラ機能フラグをクリア
-		clearCameraParams();
-		fd = dup(fd);
-		// 指定したvid,idを持つデバイスを検索, 見つかれば0を返してmDeviceに見つかったデバイスをセットする(既に1回uvc_ref_deviceを呼んである)
+            if (UNLIKELY(result < 0)) {
+                LOGD("failed to init libuvc");
+                RETURN(result, int);
+            }
+        }
+        // カメラ機能フラグをクリア
+        clearCameraParams();
+        fd = dup(fd);
+        // 指定したvid,idを持つデバイスを検索, 見つかれば0を返してmDeviceに見つかったデバイスをセットする(既に1回uvc_ref_deviceを呼んである)
 //		result = uvc_find_device2(mContext, &mDevice, vid, pid, NULL, fd);
-		result = uvc_get_device_with_fd(mContext, &mDevice, vid, pid, NULL, fd, busnum, devaddr);
-		if (LIKELY(!result)) {
-			// カメラのopen処理
-			result = uvc_open(mDevice, &mDeviceHandle);
-			if (LIKELY(!result)) {
-				// open出来た時
+        result = uvc_get_device_with_fd(mContext, &mDevice, vid, pid, NULL, fd, busnum, devaddr);
+        if (LIKELY(!result)) {
+            // カメラのopen処理
+            result = uvc_open(mDevice, &mDeviceHandle, videoIndex);
+            if (LIKELY(!result)) {
+                // open出来た時
 #if LOCAL_DEBUG
-				uvc_print_diag(mDeviceHandle, stderr);
+                uvc_print_diag(mDeviceHandle, stderr);
 #endif
-				mFd = fd;
-				mStatusCallback = new UVCStatusCallback(mDeviceHandle);
-				mButtonCallback = new UVCButtonCallback(mDeviceHandle);
-				mPreview = new UVCPreview(mDeviceHandle);
-			} else {
-				// open出来なかった時
-				LOGE("could not open camera:err=%d", result);
-				uvc_unref_device(mDevice);
+                mFd = fd;
+                mStatusCallback = new UVCStatusCallback(mDeviceHandle);
+                mButtonCallback = new UVCButtonCallback(mDeviceHandle);
+                mPreview = new UVCPreview(mDeviceHandle);
+            } else {
+                // open出来なかった時
+                LOGE("could not open camera:err=%d", result);
+                uvc_unref_device(mDevice);
 //				SAFE_DELETE(mDevice);	// 参照カウンタが0ならuvc_unref_deviceでmDeviceがfreeされるから不要 XXX クラッシュ, 既に破棄されているのを再度破棄しようとしたからみたい
-				mDevice = NULL;
-				mDeviceHandle = NULL;
-				close(fd);
-			}
-		} else {
-			LOGE("could not find camera:err=%d", result);
-			close(fd);
-		}
-	} else {
-		// カメラが既にopenしている時
-		LOGW("camera is already opened. you should release first");
-	}
-	RETURN(result, int);
+                mDevice = NULL;
+                mDeviceHandle = NULL;
+                close(fd);
+            }
+        } else {
+            LOGE("could not find camera:err=%d", result);
+            close(fd);
+        }
+    } else {
+        // カメラが既にopenしている時
+        LOGW("camera is already opened. you should release first");
+    }
+    RETURN(result, int);
 }
 
 // カメラを開放する

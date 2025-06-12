@@ -38,6 +38,6 @@ dependencies {
     api 'com.elvishew:xlog:1.11.0'
 //    implementation fileTree("libs")
 
-    implementation project(path: ':libuvc')
+    api project(path: ':libuvc')
     api project(path: ':libnative')
 }
