@@ -241,7 +241,6 @@ public class LightControl {
         onDeviceStateCallback = null;
     }
 
-
     private static native int setDistanceSettings(int connectionFd, int vid, int pid, String usbFs, int busNum, int devNum, int lightBrightness);
     private static native int setFillLightBrightness(int connectionFd, int vid, int pid, String usbFs, int busNum, int devNum, int lightBrightness);
     private static native int setInfraredLightBrightness(int connectionFd, int vid, int pid, String usbFs, int busNum, int devNum, int lightBrightness);
