@@ -189,6 +189,7 @@ class MultiCameraClient(ctx: Context, callback: IDeviceConnectCallBack?) {
         return true
     }
 
+
     /**
      * Uvc camera has permission
      *
