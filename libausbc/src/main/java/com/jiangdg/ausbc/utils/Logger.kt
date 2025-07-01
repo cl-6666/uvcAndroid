@@ -26,6 +26,7 @@ import com.jiangdg.utils.XLogWrapper
  * @author Created by jiangdg on 2022/1/24
  */
 object Logger {
+
     fun init(application: Application, folderPath: String? = null) {
         XLogWrapper.init(application, folderPath)
     }
