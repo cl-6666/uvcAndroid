@@ -361,45 +361,109 @@ int UVCPreview::startPreview() {
 	RETURN(result, int);
 }
 
+//int UVCPreview::stopPreview() {
+//	ENTER();
+//	bool b = isRunning();
+//	if (LIKELY(b)) {
+//		mIsRunning = false;
+//		pthread_cond_signal(&preview_sync);
+//		// jiangdg:fix stopview crash
+//		// because of capture_thread may null when called do_preview()
+//		if (mHasCapturing) {
+//			pthread_cond_signal(&capture_sync);
+//			if (capture_thread && pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
+//				LOGW("UVCPreview::terminate capture thread: pthread_join failed");
+//			}
+//		}
+//		if (preview_thread && pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
+//			LOGW("UVCPreview::terminate preview thread: pthread_join failed");
+//		}
+//		clearDisplay();
+//	}
+//	mHasCapturing = false;
+//	clearPreviewFrame();
+//	clearCaptureFrame();
+//	// check preview mutex available
+//	if (pthread_mutex_lock(&preview_mutex) == 0) {
+//		if (mPreviewWindow) {
+//			ANativeWindow_release(mPreviewWindow);
+//			mPreviewWindow = NULL;
+//		}
+//		pthread_mutex_unlock(&preview_mutex);
+//	}
+//	if (pthread_mutex_lock(&capture_mutex) == 0) {
+//		if (mCaptureWindow) {
+//			ANativeWindow_release(mCaptureWindow);
+//			mCaptureWindow = NULL;
+//		}
+//		pthread_mutex_unlock(&capture_mutex);
+//	}
+//	RETURN(0, int);
+//}
+
+
 int UVCPreview::stopPreview() {
-	ENTER();
-	bool b = isRunning();
-	if (LIKELY(b)) {
-		mIsRunning = false;
-		pthread_cond_signal(&preview_sync);
-		// jiangdg:fix stopview crash
-		// because of capture_thread may null when called do_preview()
-		if (mHasCapturing) {
-			pthread_cond_signal(&capture_sync);
-			if (capture_thread && pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-				LOGW("UVCPreview::terminate capture thread: pthread_join failed");
-			}
-		}
-		if (preview_thread && pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
-			LOGW("UVCPreview::terminate preview thread: pthread_join failed");
-		}
-		clearDisplay();
-	}
-	mHasCapturing = false;
-	clearPreviewFrame();
-	clearCaptureFrame();
-	// check preview mutex available
-	if (pthread_mutex_lock(&preview_mutex) == 0) {
-		if (mPreviewWindow) {
-			ANativeWindow_release(mPreviewWindow);
-			mPreviewWindow = NULL;
-		}
-		pthread_mutex_unlock(&preview_mutex);
-	}
-	if (pthread_mutex_lock(&capture_mutex) == 0) {
-		if (mCaptureWindow) {
-			ANativeWindow_release(mCaptureWindow);
-			mCaptureWindow = NULL;
-		}
-		pthread_mutex_unlock(&capture_mutex);
-	}
-	RETURN(0, int);
+    ENTER();
+
+    // 避免重复调用
+    if (!isRunning()) {
+        RETURN(0, int);
+    }
+
+    mIsRunning = false;
+
+    // 通知线程退出
+    pthread_cond_signal(&preview_sync);
+    pthread_cond_signal(&capture_sync);
+
+    // 等待捕获线程退出
+    if (capture_thread) {
+        pthread_join(capture_thread, NULL);
+        capture_thread = 0;  // 防止悬空
+    }
+
+    // 等待预览线程退出
+    if (preview_thread) {
+        pthread_join(preview_thread, NULL);
+        preview_thread = 0;  // 防止悬空
+    }
+
+    // 清理显示
+    clearDisplay();
+
+    // 安全释放 preview 窗口
+    pthread_mutex_lock(&preview_mutex);
+    if (mPreviewWindow) {
+        ANativeWindow_release(mPreviewWindow);
+        mPreviewWindow = NULL;
+    }
+    pthread_mutex_unlock(&preview_mutex);
+
+    // 安全释放 capture 窗口
+    pthread_mutex_lock(&capture_mutex);
+    if (mCaptureWindow) {
+        ANativeWindow_release(mCaptureWindow);
+        mCaptureWindow = NULL;
+    }
+    pthread_mutex_unlock(&capture_mutex);
+
+    // 防止空指针调用 uvc_stop_streaming
+    if (mDeviceHandle) {
+        uvc_stop_streaming(mDeviceHandle);
+        LOGD("uvc_stop_streaming success");
+    } else {
+        LOGW("mDeviceHandle is NULL, skip uvc_stop_streaming");
+    }
+
+    // 安全清理帧数据
+    clearPreviewFrame();
+    clearCaptureFrame();
+
+    mHasCapturing = false;
+
+    RETURN(0, int);
 }
+
 
 //**********************************************************************
 //
