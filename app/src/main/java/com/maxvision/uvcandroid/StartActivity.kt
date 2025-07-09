@@ -10,21 +10,13 @@ import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.Permission
 import com.hjq.permissions.XXPermissions
 import com.jiangdg.ausbc.utils.ToastUtils.show
-import com.maxvision.uvcandroid.fragment.FaceFragment
-import com.maxvision.uvcandroid.fragment.IrisFragment
-import com.maxvision.uvcandroid.pair.DemoMultiCameraFragment
 import com.maxvision.uvcandroid.util.navigateTo
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class StartActivity : AppCompatActivity() {
 
-    //FaceFragment
-    private val faceFragment = FaceFragment()
-    //IrisFragment
-    private val irisFragment = IrisFragment()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,15 +54,15 @@ class StartActivity : AppCompatActivity() {
     }
 
     fun oneClick(view: View) {
-//        navigateTo<MainActivity>()
-        navigateTo<MultiChannelActivity>()
+        navigateTo<MainActivity>()
+//        navigateTo<MultiChannelActivity>()
     }
 
     fun manyClick(view: View) {
         lifecycleScope.launch (Dispatchers.Main){
 //            val transaction = supportFragmentManager.beginTransaction()
 //            transaction.add(R.id.preview, faceFragment)
-//            transaction.commit()
+//            transacxtion.commit()
 //            withContext(Dispatchers.IO){
 //                delay(1000)
 //            }
@@ -78,9 +70,9 @@ class StartActivity : AppCompatActivity() {
 //            transaction1.add(R.id.preview2, irisFragment)
 //            transaction1.commit()
 
-            val transaction1 = supportFragmentManager.beginTransaction()
-            transaction1.add(R.id.preview3, DemoMultiCameraFragment())
-            transaction1.commit()
+//            val transaction1 = supportFragmentManager.beginTransaction()
+//            transaction1.add(R.id.preview3, DemoMultiCameraFragment())
+//            transaction1.commit()
 
         }
 

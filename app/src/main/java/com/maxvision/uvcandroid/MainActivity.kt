@@ -7,7 +7,6 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.enableEdgeToEdge
 import androidx.databinding.DataBindingUtil
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.base.CameraActivity
@@ -18,7 +17,6 @@ import com.jiangdg.ausbc.camera.bean.CameraRequest
 import com.jiangdg.ausbc.render.env.RotateType
 import com.jiangdg.ausbc.utils.Logger
 import com.jiangdg.ausbc.widget.AspectRatioTextureView
-import com.jiangdg.ausbc.widget.AspectRatioTextureView2
 import com.jiangdg.ausbc.widget.IAspectRatio
 import com.maxvision.uvcandroid.databinding.ActivityMainBinding
 
@@ -36,7 +34,7 @@ class MainActivity :  CameraActivity() {
 
 
     override fun getCameraView(): IAspectRatio? {
-        val aspectRatioTextureView = AspectRatioTextureView2(this)
+        val aspectRatioTextureView = AspectRatioTextureView(this)
 //        aspectRatioTextureView.setRotationAngle(180)
         aspectRatioTextureView.setAspectRatio(PREVIEW_WIDTH, PREVIEW_HEIGHT)
         return aspectRatioTextureView
