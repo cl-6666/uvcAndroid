@@ -193,41 +193,31 @@ public final class USBMonitor {
 //			mAsyncHandler.postDelayed(mDeviceCheckRunnable, 1000);
 //		}
 //	}
+
+	@SuppressLint({"UnspecifiedImmutableFlag", "WrongConstant"})
 	public synchronized void register() throws IllegalStateException {
 		if (destroyed) throw new IllegalStateException("already destroyed");
 		if (mPermissionIntent == null) {
 			if (DEBUG) XLogWrapper.i(TAG, "register:");
 			final Context context = mWeakContext.get();
 			if (context != null) {
-				// 创建显式 Intent（加 setPackage，确保兼容 Android 12+ 和 Android 14+）
 				Intent intent = new Intent(ACTION_USB_PERMISSION);
-				intent.setPackage(context.getPackageName()); // 显式指定包名，避免隐式 Intent 安全问题
-
-				if (Build.VERSION.SDK_INT >= 31) {
-					// Android 12+ 要求设置 FLAG_IMMUTABLE
-					mPermissionIntent = PendingIntent.getBroadcast(
-							context, 0, intent, PendingIntent.FLAG_IMMUTABLE
-					);
-				} else {
-					mPermissionIntent = PendingIntent.getBroadcast(
-							context, 0, intent, 0
-					);
-				}
+				intent.setPackage(context.getPackageName()); // add it
+				mPermissionIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_MUTABLE);
 				final IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-				// 虽然 ACTION_USB_DEVICE_ATTACHED 某些设备可能不会触发，但仍然保留
-				filter.addAction(ACTION_USB_DEVICE_ATTACHED);
 				filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
-				if (Build.VERSION.SDK_INT >= 33) {
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 					context.registerReceiver(mUsbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
 				} else {
 					context.registerReceiver(mUsbReceiver, filter);
 				}
 			}
-			// 启动设备连接检查
+			// start connection check
 			mDeviceCounts = 0;
 			mAsyncHandler.postDelayed(mDeviceCheckRunnable, 1000);
 		}
 	}
+
 
 	/**
 	 * unregister BroadcastReceiver
