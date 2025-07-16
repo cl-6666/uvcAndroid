@@ -55,6 +55,9 @@ typedef struct {
 
 class UVCPreview {
 private:
+    bool mIsStopping = false; // 防止 stopPreview 重入
+    bool mIsStreaming;                    // 是否正在推流
+    pthread_mutex_t stop_mutex;          // 防止 stopPreview 多次执行
 	uvc_device_handle_t *mDeviceHandle;
 	ANativeWindow *mPreviewWindow;
 	volatile bool mIsRunning;
