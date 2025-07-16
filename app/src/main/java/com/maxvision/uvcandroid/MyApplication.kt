@@ -12,6 +12,8 @@ import com.jiangdg.ausbc.utils.Logger
 class MyApplication : Application() {
 
 
+
+
     override fun onCreate() {
         super.onCreate()
 //        Logger.init(this)
