@@ -37,6 +37,6 @@ dependencies {
     implementation "com.google.android.material:material:${materialVersion}"
     api 'com.elvishew:xlog:1.11.1'
     api 'com.github.getActivity:XXPermissions:20.0'
-    implementation project(path: ':libuvc')
+    api project(path: ':libuvc')
     api project(path: ':libnative')
 }

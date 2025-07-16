@@ -27,9 +27,13 @@ import java.util.TimeZone;
  * @author Created by jiangdg on 2022/7/19
  */
 public class XLogWrapper {
-    private static final String TAG = "AUSBC";
+    private static final String TAG = "MAXVISION";
     private static final String FLATTERER = "{d yyyy-MM-dd HH:mm:ss.SSS} {l}/{t}: {m}";
     private static boolean mHasInit;
+
+    // 新增日志开关
+    private static boolean enableLog = true;
+
 
     public static void init(Application application, String folderPath) {
         AndroidPrinter androidPrinter = new AndroidPrinter(true);
@@ -47,6 +51,7 @@ public class XLogWrapper {
     }
 
     public static void v(String tag, String msg) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.v( "[" + tag + "]  " +msg);
             return;
@@ -55,6 +60,7 @@ public class XLogWrapper {
     }
 
     public static void i(String tag, String msg) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.i( "[" + tag + "]  " +msg);
             return;
@@ -63,6 +69,7 @@ public class XLogWrapper {
     }
 
     public static void d(String tag, String msg) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.d( "[" + tag + "]  " +msg);
             return;
@@ -71,6 +78,7 @@ public class XLogWrapper {
     }
 
     public static void w(String tag, String msg) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.w( "[" + tag + "]  " +msg);
             return;
@@ -79,6 +87,7 @@ public class XLogWrapper {
     }
 
     public static void w(String tag, String msg, Throwable throwable) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.w( "[" + tag + "]  " +msg, throwable);
             return;
@@ -87,6 +96,7 @@ public class XLogWrapper {
     }
 
     public static void w(String tag, Throwable throwable) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.w("[" + tag, throwable);
             return;
@@ -95,6 +105,7 @@ public class XLogWrapper {
     }
 
     public static void e(String tag, String msg) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.e("[" + tag + "]  " +msg);
             return;
@@ -103,11 +114,21 @@ public class XLogWrapper {
     }
 
     public static void e(String tag, String msg, Throwable throwable) {
+        if (!enableLog) return;
         if (mHasInit) {
             XLog.e("[" + tag + "]  " +msg, throwable);
             return;
         }
         Log.e(tag,  "" +msg, throwable);
+    }
+
+
+    /**
+     * 提供外部调用设置日志开关的方法
+     * @param enable 志开关的方法
+     */
+    public static void setEnableLog(boolean enable) {
+        enableLog = enable;
     }
 
     static class MyFileNameGenerator implements FileNameGenerator {

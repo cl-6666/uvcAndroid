@@ -270,10 +270,9 @@ class PreviewImageView: AppCompatImageView {
         val scaleX = PropertyValuesHolder.ofFloat("scaleX", 1.0f, 1.2f, 1.0f)
         val scaleY = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 1.2f, 1.0f)
         val progress = PropertyValuesHolder.ofFloat("progress", getProgress(), 1.0f)
-        mBreathAnimation = ObjectAnimator.ofPropertyValuesHolder(this,  scaleX,  scaleY, progress).apply {
-            addListener(object :AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator?) {
-                    super.onAnimationEnd(animation)
+        mBreathAnimation = ObjectAnimator.ofPropertyValuesHolder(this, scaleX, scaleY, progress).apply {
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
                     isNewImageLoading = false
                     setProgress(0.0f)
                     mBreathAnimation = null

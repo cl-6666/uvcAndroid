@@ -549,8 +549,11 @@ public class MediaMoviePlayer {
 	 * @throws IOException
 	 */
 	private final void handlePrepare(final Object source) throws IOException {
-		if (DEBUG) Log.v(TAG, "handlePrepare:" + source);
-        synchronized (mSync) {
+		if (DEBUG) {
+			Log.v(TAG, "handlePrepare:" + source);
+		}
+
+		synchronized (mSync) {
 			if (mState != STATE_STOP) {
 				throw new RuntimeException("invalid state:" + mState);
 			}
@@ -1069,8 +1072,12 @@ public class MediaMoviePlayer {
         mVideoInputBuffers = mVideoOutputBuffers = null;
         mAudioInputBuffers = mAudioOutputBuffers = null;
 		if (mMetadata != null) {
-			mMetadata.release();
-			mMetadata = null;
+            try {
+                mMetadata.release();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            mMetadata = null;
 		}
 		synchronized (mSync) {
 			mVideoOutputDone = mVideoInputDone = mAudioOutputDone = mAudioInputDone = true;
