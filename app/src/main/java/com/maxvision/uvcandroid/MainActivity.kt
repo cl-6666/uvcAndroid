@@ -79,7 +79,7 @@ class MainActivity :  CameraActivity() {
     override fun getGravity(): Int = Gravity.CENTER
 
     override fun generateCamera(ctx: Context, device: UsbDevice): MultiCameraClient.ICamera {
-        return CameraUVC(ctx, device,0)
+        return CameraUVC(ctx, device,1)
     }
 
 //    override fun getCameraRequest(): CameraRequest {
