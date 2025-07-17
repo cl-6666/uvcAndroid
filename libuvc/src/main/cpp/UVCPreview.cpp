@@ -415,20 +415,32 @@ int UVCPreview::stopPreview() {
 
     mIsStopping = true;
 
+    pthread_t self_id = pthread_self();
+
     if (isRunning()) {
         mIsRunning = false;
 
+        // 通知线程退出
         pthread_cond_signal(&preview_sync);
 
         if (mHasCapturing) {
             pthread_cond_signal(&capture_sync);
-            if (capture_thread && pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-                LOGW("UVCPreview::terminate capture thread: pthread_join failed");
+
+            // 避免当前线程 join 自己
+            if (capture_thread && !pthread_equal(self_id, capture_thread)) {
+                if (pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
+                    LOGW("UVCPreview::terminate capture thread: pthread_join failed");
+                }
+                capture_thread = 0;
             }
         }
 
-        if (preview_thread && pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
-            LOGW("UVCPreview::terminate preview thread: pthread_join failed");
+        // 同样避免 join 自己
+        if (preview_thread && !pthread_equal(self_id, preview_thread)) {
+            if (pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
+                LOGW("UVCPreview::terminate preview thread: pthread_join failed");
+            }
+            preview_thread = 0;
         }
 
         clearDisplay();
@@ -438,6 +450,7 @@ int UVCPreview::stopPreview() {
     clearPreviewFrame();
     clearCaptureFrame();
 
+    // 安全释放 mPreviewWindow
     if (pthread_mutex_lock(&preview_mutex) == 0) {
         if (mPreviewWindow) {
             ANativeWindow_release(mPreviewWindow);
@@ -446,6 +459,7 @@ int UVCPreview::stopPreview() {
         pthread_mutex_unlock(&preview_mutex);
     }
 
+    // 安全释放 mCaptureWindow
     if (pthread_mutex_lock(&capture_mutex) == 0) {
         if (mCaptureWindow) {
             ANativeWindow_release(mCaptureWindow);
@@ -454,6 +468,7 @@ int UVCPreview::stopPreview() {
         pthread_mutex_unlock(&capture_mutex);
     }
 
+    // 停止 UVC 流
     if (mDeviceHandle && mIsStreaming) {
         LOGD("stopPreview: stopping streaming");
         uvc_stop_streaming(mDeviceHandle);
