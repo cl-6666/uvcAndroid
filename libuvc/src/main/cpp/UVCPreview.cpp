@@ -412,35 +412,39 @@ int UVCPreview::stopPreview() {
         LOGW("stopPreview is already running, skip.");
         RETURN(0, int);
     }
-
     mIsStopping = true;
 
-    pthread_t self_id = pthread_self();
+    const pthread_t self_id = pthread_self();
 
     if (isRunning()) {
         mIsRunning = false;
 
-        // 通知线程退出
         pthread_cond_signal(&preview_sync);
 
         if (mHasCapturing) {
             pthread_cond_signal(&capture_sync);
 
-            // 避免当前线程 join 自己
             if (capture_thread && !pthread_equal(self_id, capture_thread)) {
-                if (pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-                    LOGW("UVCPreview::terminate capture thread: pthread_join failed");
+                pthread_t temp = capture_thread;
+                capture_thread = 0; // 提前置0避免多次 join
+                int ret = pthread_join(temp, NULL);
+                if (ret != 0) {
+                    LOGE("pthread_join capture_thread failed: %d", ret);
                 }
-                capture_thread = 0;
+            } else {
+                LOGW("skip pthread_join on capture_thread (null or self)");
             }
         }
 
-        // 同样避免 join 自己
         if (preview_thread && !pthread_equal(self_id, preview_thread)) {
-            if (pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
-                LOGW("UVCPreview::terminate preview thread: pthread_join failed");
-            }
+            pthread_t temp = preview_thread;
             preview_thread = 0;
+            int ret = pthread_join(temp, NULL);
+            if (ret != 0) {
+                LOGE("pthread_join preview_thread failed: %d", ret);
+            }
+        } else {
+            LOGW("skip pthread_join on preview_thread (null or self)");
         }
 
         clearDisplay();
@@ -450,7 +454,6 @@ int UVCPreview::stopPreview() {
     clearPreviewFrame();
     clearCaptureFrame();
 
-    // 安全释放 mPreviewWindow
     if (pthread_mutex_lock(&preview_mutex) == 0) {
         if (mPreviewWindow) {
             ANativeWindow_release(mPreviewWindow);
@@ -459,7 +462,6 @@ int UVCPreview::stopPreview() {
         pthread_mutex_unlock(&preview_mutex);
     }
 
-    // 安全释放 mCaptureWindow
     if (pthread_mutex_lock(&capture_mutex) == 0) {
         if (mCaptureWindow) {
             ANativeWindow_release(mCaptureWindow);
@@ -468,7 +470,6 @@ int UVCPreview::stopPreview() {
         pthread_mutex_unlock(&capture_mutex);
     }
 
-    // 停止 UVC 流
     if (mDeviceHandle && mIsStreaming) {
         LOGD("stopPreview: stopping streaming");
         uvc_stop_streaming(mDeviceHandle);
