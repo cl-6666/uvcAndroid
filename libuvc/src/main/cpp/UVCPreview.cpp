@@ -344,23 +344,38 @@ int UVCPreview::startPreview() {
     int result = EXIT_FAILURE;
     if (!isRunning()) {
         mIsRunning = true;
+
+        // —— 启动 preview 线程 ——
         pthread_mutex_lock(&preview_mutex);
-        {
-            if (LIKELY(mPreviewWindow)) {
-                result = pthread_create(&preview_thread, NULL, preview_thread_func, (void *)this);
+        if (mPreviewWindow) {
+            result = pthread_create(&preview_thread, nullptr, preview_thread_func, this);
+            if (result == EXIT_SUCCESS) {
+                mPreviewThreadAlive.store(true, std::memory_order_release);
+                LOGD("preview_thread created");
+            } else {
+                LOGE("failed to create preview_thread: %d", result);
+                mIsRunning = false;
             }
         }
         pthread_mutex_unlock(&preview_mutex);
-        if (UNLIKELY(result != EXIT_SUCCESS)) {
-            LOGW("UVCCamera::window does not exist/already running/could not create thread etc.");
-            mIsRunning = false;
-            pthread_mutex_lock(&preview_mutex);
-            {
-                pthread_cond_signal(&preview_sync);
-            }
-            pthread_mutex_unlock(&preview_mutex);
+
+        // 如果 preview 创建失败，直接返回
+        if (result != EXIT_SUCCESS) {
+            RETURN(result, int);
+        }
+
+        // —— 启动 capture 线程 ——
+        result = pthread_create(&capture_thread, nullptr, capture_thread_func, this);
+        if (result == EXIT_SUCCESS) {
+            mCaptureThreadAlive.store(true, std::memory_order_release);
+            LOGD("capture_thread created");
+        } else {
+            LOGE("failed to create capture_thread: %d", result);
+            // 即便 capture 创建失败，也允许预览继续
+            mHasCapturing = false;
         }
     }
+
     RETURN(result, int);
 }
 
@@ -407,44 +422,38 @@ int UVCPreview::startPreview() {
 
 int UVCPreview::stopPreview() {
     ENTER();
-
-    if (mIsStopping) {
-        LOGW("stopPreview is already running, skip.");
-        RETURN(0, int);
-    }
+    if (mIsStopping) RETURN(0, int);
     mIsStopping = true;
 
     const pthread_t self_id = pthread_self();
 
     if (isRunning()) {
         mIsRunning = false;
-
         pthread_cond_signal(&preview_sync);
+        if (mHasCapturing) pthread_cond_signal(&capture_sync);
 
-        if (mHasCapturing) {
-            pthread_cond_signal(&capture_sync);
-
-            if (capture_thread && !pthread_equal(self_id, capture_thread)) {
-                pthread_t temp = capture_thread;
-                capture_thread = 0; // 提前置0避免多次 join
-                int ret = pthread_join(temp, NULL);
-                if (ret != 0) {
-                    LOGE("pthread_join capture_thread failed: %d", ret);
+        // —— capture thread ——
+        if (mCaptureThreadAlive.load(std::memory_order_acquire)) {
+            pthread_t t = capture_thread;
+            mCaptureThreadAlive.store(false, std::memory_order_release);
+            capture_thread = 0;
+            if (!pthread_equal(self_id, t)) {
+                if (pthread_join(t, nullptr) != 0) {
+                    LOGW("join capture_thread failed");
                 }
-            } else {
-                LOGW("skip pthread_join on capture_thread (null or self)");
             }
         }
 
-        if (preview_thread && !pthread_equal(self_id, preview_thread)) {
-            pthread_t temp = preview_thread;
+        // —— preview thread ——
+        if (mPreviewThreadAlive.load(std::memory_order_acquire)) {
+            pthread_t t = preview_thread;
+            mPreviewThreadAlive.store(false, std::memory_order_release);
             preview_thread = 0;
-            int ret = pthread_join(temp, NULL);
-            if (ret != 0) {
-                LOGE("pthread_join preview_thread failed: %d", ret);
+            if (!pthread_equal(self_id, t)) {
+                if (pthread_join(t, nullptr) != 0) {
+                    LOGW("join preview_thread failed");
+                }
             }
-        } else {
-            LOGW("skip pthread_join on preview_thread (null or self)");
         }
 
         clearDisplay();
@@ -454,6 +463,7 @@ int UVCPreview::stopPreview() {
     clearPreviewFrame();
     clearCaptureFrame();
 
+    // 安全释放 ANativeWindow
     if (pthread_mutex_lock(&preview_mutex) == 0) {
         if (mPreviewWindow) {
             ANativeWindow_release(mPreviewWindow);
@@ -461,7 +471,6 @@ int UVCPreview::stopPreview() {
         }
         pthread_mutex_unlock(&preview_mutex);
     }
-
     if (pthread_mutex_lock(&capture_mutex) == 0) {
         if (mCaptureWindow) {
             ANativeWindow_release(mCaptureWindow);
@@ -471,13 +480,11 @@ int UVCPreview::stopPreview() {
     }
 
     if (mDeviceHandle && mIsStreaming) {
-        LOGD("stopPreview: stopping streaming");
         uvc_stop_streaming(mDeviceHandle);
         mIsStreaming = false;
     }
 
     mIsStopping = false;
-
     RETURN(0, int);
 }
 
@@ -555,17 +562,17 @@ void UVCPreview::clearPreviewFrame() {
 }
 
 void *UVCPreview::preview_thread_func(void *vptr_args) {
-    int result;
-
     ENTER();
     UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
     if (LIKELY(preview)) {
         uvc_stream_ctrl_t ctrl;
-        result = preview->prepare_preview(&ctrl);
-        if (LIKELY(!result)) {
-            preview->do_preview(&ctrl);
+        int result = preview->prepare_preview(&ctrl);
+        if (LIKELY(result == 0)) {
+            preview->do_preview(&ctrl);  // 直到 mIsRunning == false 时才返回
         }
     }
+    // 线程即将退出：清“活跃”标志
+    preview->mPreviewThreadAlive.store(false, std::memory_order_release);
     PRE_EXIT();
     pthread_exit(NULL);
 }
@@ -874,20 +881,20 @@ void UVCPreview::clearCaptureFrame() {
  */
 // static
 void *UVCPreview::capture_thread_func(void *vptr_args) {
-    int result;
-
     ENTER();
     UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
     if (LIKELY(preview)) {
         JavaVM *vm = getVM();
         JNIEnv *env;
-        // attach to JavaVM
+        // 绑定到 JavaVM
         vm->AttachCurrentThread(&env, NULL);
-        preview->do_capture(env);	// never return until finish previewing
-        // detach from JavaVM
+        preview->do_capture(env);    // 直到 mIsRunning == false 时才返回
+        // 解绑
         vm->DetachCurrentThread();
         MARK("DetachCurrentThread");
     }
+    // 线程即将退出：清“活跃”标志
+    preview->mCaptureThreadAlive.store(false, std::memory_order_release);
     PRE_EXIT();
     pthread_exit(NULL);
 }

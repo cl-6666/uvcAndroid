@@ -29,7 +29,7 @@
 #include <pthread.h>
 #include <android/native_window.h>
 #include "objectarray.h"
-
+#include <atomic>    // 新增
 #pragma interface
 
 #define DEFAULT_PREVIEW_WIDTH 640
@@ -55,6 +55,9 @@ typedef struct {
 
 class UVCPreview {
 private:
+    // 新增两行，用于跟踪线程是否活跃
+    std::atomic<bool> mCaptureThreadAlive{false};
+    std::atomic<bool> mPreviewThreadAlive{false};
     bool mIsStopping = false; // 防止 stopPreview 重入
     bool mIsStreaming;                    // 是否正在推流
     pthread_mutex_t stop_mutex;          // 防止 stopPreview 多次执行
