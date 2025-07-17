@@ -24,6 +24,7 @@ class MainActivity :  CameraActivity() {
     private val PREVIEW_HEIGHT = 720
     private lateinit var mViewBinding: ActivityMainBinding
 
+
     override fun getCameraView(): IAspectRatio? {
         val aspectRatioTextureView = AspectRatioTextureView(this)
         aspectRatioTextureView.setAspectRatio(PREVIEW_WIDTH, PREVIEW_HEIGHT)
