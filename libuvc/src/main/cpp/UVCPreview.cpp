@@ -82,9 +82,6 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
     pthread_mutex_init(&capture_mutex, NULL);
 
     pthread_mutex_init(&pool_mutex, NULL);
-
-    mIsStreaming = false;
-    pthread_mutex_init(&stop_mutex, NULL);
     EXIT();
 }
 
@@ -109,7 +106,6 @@ UVCPreview::~UVCPreview() {
     // 释放 capture_clock_aatr
     // pthread_condattr_destroy(&capture_clock_attr);
     pthread_mutex_destroy(&pool_mutex);
-    pthread_mutex_destroy(&stop_mutex);
     EXIT();
 }
 
@@ -210,6 +206,7 @@ int UVCPreview::setPreviewDisplay(ANativeWindow *preview_window) {
                 ANativeWindow_release(mPreviewWindow);
             mPreviewWindow = preview_window;
             if (LIKELY(mPreviewWindow)) {
+                LOGE("ANativeWindow_setBuffersGeometry frameWidth:%d frameHeight:%d", frameWidth, frameHeight);
                 ANativeWindow_setBuffersGeometry(mPreviewWindow,
                                                  frameWidth, frameHeight, previewFormat);
             }
@@ -344,126 +341,49 @@ int UVCPreview::startPreview() {
     int result = EXIT_FAILURE;
     if (!isRunning()) {
         mIsRunning = true;
-
-        // —— 启动 preview 线程 ——
         pthread_mutex_lock(&preview_mutex);
-        if (mPreviewWindow) {
-            result = pthread_create(&preview_thread, nullptr, preview_thread_func, this);
-            if (result == EXIT_SUCCESS) {
-                mPreviewThreadAlive.store(true, std::memory_order_release);
-                LOGD("preview_thread created");
-            } else {
-                LOGE("failed to create preview_thread: %d", result);
-                mIsRunning = false;
+        {
+            if (LIKELY(mPreviewWindow)) {
+                result = pthread_create(&preview_thread, NULL, preview_thread_func, (void *)this);
             }
         }
         pthread_mutex_unlock(&preview_mutex);
-
-        // 如果 preview 创建失败，直接返回
-        if (result != EXIT_SUCCESS) {
-            RETURN(result, int);
-        }
-
-        // —— 启动 capture 线程 ——
-        result = pthread_create(&capture_thread, nullptr, capture_thread_func, this);
-        if (result == EXIT_SUCCESS) {
-            mCaptureThreadAlive.store(true, std::memory_order_release);
-            LOGD("capture_thread created");
-        } else {
-            LOGE("failed to create capture_thread: %d", result);
-            // 即便 capture 创建失败，也允许预览继续
-            mHasCapturing = false;
+        if (UNLIKELY(result != EXIT_SUCCESS)) {
+            LOGW("UVCCamera::window does not exist/already running/could not create thread etc.");
+            mIsRunning = false;
+            pthread_mutex_lock(&preview_mutex);
+            {
+                pthread_cond_signal(&preview_sync);
+            }
+            pthread_mutex_unlock(&preview_mutex);
         }
     }
-
     RETURN(result, int);
 }
 
-//int UVCPreview::stopPreview() {
-//	ENTER();
-//	bool b = isRunning();
-//	if (LIKELY(b)) {
-//		mIsRunning = false;
-//        pthread_cond_signal(&preview_sync);
-//        // jiangdg:fix stopview crash
-//        // because of capture_thread may null when called do_preview()
-//		if (mHasCapturing) {
-//            pthread_cond_signal(&capture_sync);
-//            if (capture_thread && pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
-//                LOGW("UVCPreview::terminate capture thread: pthread_join failed");
-//            }
-//		}
-//		if (preview_thread && pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
-//			LOGW("UVCPreview::terminate preview thread: pthread_join failed");
-//		}
-//		clearDisplay();
-//	}
-//	mHasCapturing = false;
-//	clearPreviewFrame();
-//	clearCaptureFrame();
-//	// check preview mutex available
-//	if (pthread_mutex_lock(&preview_mutex) == 0) {
-//		if (mPreviewWindow) {
-//			ANativeWindow_release(mPreviewWindow);
-//			mPreviewWindow = NULL;
-//		}
-//		pthread_mutex_unlock(&preview_mutex);
-//	}
-//	if (pthread_mutex_lock(&capture_mutex) == 0) {
-//		if (mCaptureWindow) {
-//			ANativeWindow_release(mCaptureWindow);
-//			mCaptureWindow = NULL;
-//		}
-//		pthread_mutex_unlock(&capture_mutex);
-//	}
-//	RETURN(0, int);
-//}
-
-
 int UVCPreview::stopPreview() {
     ENTER();
-    if (mIsStopping) RETURN(0, int);
-    mIsStopping = true;
-
-    const pthread_t self_id = pthread_self();
-
-    if (isRunning()) {
+    bool b = isRunning();
+    if (LIKELY(b)) {
         mIsRunning = false;
         pthread_cond_signal(&preview_sync);
-        if (mHasCapturing) pthread_cond_signal(&capture_sync);
-
-        // —— capture thread ——
-        if (mCaptureThreadAlive.load(std::memory_order_acquire)) {
-            pthread_t t = capture_thread;
-            mCaptureThreadAlive.store(false, std::memory_order_release);
-            capture_thread = 0;
-            if (!pthread_equal(self_id, t)) {
-                if (pthread_join(t, nullptr) != 0) {
-                    LOGW("join capture_thread failed");
-                }
+        // jiangdg:fix stopview crash
+        // because of capture_thread may null when called do_preview()
+        if (mHasCapturing) {
+            pthread_cond_signal(&capture_sync);
+            if (capture_thread && pthread_join(capture_thread, NULL) != EXIT_SUCCESS) {
+                LOGW("UVCPreview::terminate capture thread: pthread_join failed");
             }
         }
-
-        // —— preview thread ——
-        if (mPreviewThreadAlive.load(std::memory_order_acquire)) {
-            pthread_t t = preview_thread;
-            mPreviewThreadAlive.store(false, std::memory_order_release);
-            preview_thread = 0;
-            if (!pthread_equal(self_id, t)) {
-                if (pthread_join(t, nullptr) != 0) {
-                    LOGW("join preview_thread failed");
-                }
-            }
+        if (preview_thread && pthread_join(preview_thread, NULL) != EXIT_SUCCESS) {
+            LOGW("UVCPreview::terminate preview thread: pthread_join failed");
         }
-
         clearDisplay();
     }
-
     mHasCapturing = false;
     clearPreviewFrame();
     clearCaptureFrame();
-
-    // 安全释放 ANativeWindow
+    // check preview mutex available
     if (pthread_mutex_lock(&preview_mutex) == 0) {
         if (mPreviewWindow) {
             ANativeWindow_release(mPreviewWindow);
@@ -478,13 +398,6 @@ int UVCPreview::stopPreview() {
         }
         pthread_mutex_unlock(&capture_mutex);
     }
-
-    if (mDeviceHandle && mIsStreaming) {
-        uvc_stop_streaming(mDeviceHandle);
-        mIsStreaming = false;
-    }
-
-    mIsStopping = false;
     RETURN(0, int);
 }
 
@@ -562,17 +475,17 @@ void UVCPreview::clearPreviewFrame() {
 }
 
 void *UVCPreview::preview_thread_func(void *vptr_args) {
+    int result;
+
     ENTER();
     UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
     if (LIKELY(preview)) {
         uvc_stream_ctrl_t ctrl;
-        int result = preview->prepare_preview(&ctrl);
-        if (LIKELY(result == 0)) {
-            preview->do_preview(&ctrl);  // 直到 mIsRunning == false 时才返回
+        result = preview->prepare_preview(&ctrl);
+        if (LIKELY(!result)) {
+            preview->do_preview(&ctrl);
         }
     }
-    // 线程即将退出：清“活跃”标志
-    preview->mPreviewThreadAlive.store(false, std::memory_order_release);
     PRE_EXIT();
     pthread_exit(NULL);
 }
@@ -604,6 +517,7 @@ int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
         } else {
             frameWidth = requestWidth;
             frameHeight = requestHeight;
+            LOGI("frameSize1=(%d,%d)@%s", frameWidth, frameHeight);
         }
         frameMode = requestMode;
         frameBytes = frameWidth * frameHeight * (!requestMode ? 2 : 4);
@@ -613,6 +527,26 @@ int UVCPreview::prepare_preview(uvc_stream_ctrl_t *ctrl) {
     }
     RETURN(result, int);
 }
+
+//struct uvc_xu_control_query xu_query = {
+//		      .unit       = 3  // has to be unit 3
+//			  .selector   = 1
+//			  .query      = UVC_SET_CUR
+//			  .size       = 6
+//			  .data       = value
+//		};
+//
+
+//uvc_error_t set_xu_control(uvc_device_handle_t *devh, uint8_t bExtensionCode, uint8_t bControlSelector, uint8_t *pData, uint16_t bSize) {
+//	uvc_xu_control_t xu_ctrl;
+//	xu_ctrl.bExtensionCode = bExtensionCode;
+//	xu_ctrl.bControlSelector = bControlSelector;
+//	xu_ctrl.pData = pData;
+//	xu_ctrl.bSize = bSize;
+//	xu_ctrl.req_code = UVC_REQ_SET_CUR; // UVC_REQ_SET_CUR for setting, UVC_REQ_GET_CUR for getting
+//
+//	return uvc_xu_control_query(devh, &xu_ctrl);
+//}
 
 void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
     ENTER();
@@ -625,7 +559,6 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
     // use mHasCapturing flag confirm capture_thread was be created
     mHasCapturing = false;
     if (LIKELY(!result)) {
-        mIsStreaming = true;
         clearPreviewFrame();
         if (pthread_create(&capture_thread, NULL, capture_thread_func, (void *)this) == 0) {
             mHasCapturing = true;
@@ -660,6 +593,8 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
                 }
             }
         }
+//		uint8_t data = 10;
+//		uvc_error_t result = set_xu_control(mDeviceHandle, 1, 2, &data, 1);
         pthread_cond_signal(&capture_sync);
 #if LOCAL_DEBUG
         LOGI("preview_thread_func:wait for all callbacks complete");
@@ -702,12 +637,125 @@ static void copyFrame(const uint8_t *src, uint8_t *dest, const int width, int he
 }
 
 
+
+void RGB32RotateClockwise90(uint8_t* src,uint8_t* dst, int width, int height)
+{
+    int w;
+    int h;
+    int src_row_bytes;
+    uint8_t* img;
+    uint8_t* ptr;
+    int i, j;
+    unsigned int off1;
+    unsigned int off2;
+    int dst_row_bytes;
+
+    w = height;
+    h = width;
+    src_row_bytes =  width << 2;
+    dst_row_bytes =  w << 2;
+
+    off1  = 0;
+    off2 = (w - 1) << 2;
+    for(i = 0; i < height; i++)
+    {
+        ptr = dst + off2;
+        img = src + off1;
+        for(j = 0; j < width; j++)
+        {
+            *((uint32_t*)ptr) = *((uint32_t*)img);
+            img += 4;
+            ptr += dst_row_bytes;
+        }
+        off1 += src_row_bytes;
+        off2 = (w - i - 1) * 4;
+    }
+}
+
+// 顺时针 90 度
+// src 图像数据
+// srcW 图像宽度
+// srcH 图像高度
+// channel 图像通道,如果是RGB,BGR,=3, RGBA = 4,GRAY=1
+//注意旋转90 后，图像数据的宽高会对调，显示时候自己注意
+int RotationRight90(unsigned char * src, int srcW, int srcH, int channel)
+{
+    unsigned char * tempSrc = NULL;
+    int mSize = srcW * srcH * sizeof(char) * channel;
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    int desW = 0;
+    int desH = 0;
+
+    desW = srcH;
+    desH = srcW;
+
+    tempSrc = (unsigned char *)malloc(sizeof(char) * srcW * srcH * channel);
+    memcpy(tempSrc, src, mSize);
+
+    for(i = 0; i < desH; i ++)
+    {
+        for(j = 0; j < desW; j ++)
+        {
+            for(k = 0; k < channel; k ++)
+            {
+                src[(i * desW + j) * channel + k] = tempSrc[((srcH - 1 - j) * srcW + i) * channel + k];
+
+            }
+
+        }
+    }
+
+    free(tempSrc);
+    return 0;
+}
+
+// 旋转180度
+int RotationDown(unsigned char * src, int srcW, int srcH, int channel)
+{
+    unsigned char * tempSrc = NULL;
+    int mSize = srcW * srcH * sizeof(char) * channel;
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    int desW = 0;
+    int desH = 0;
+
+    desW = srcW;
+    desH = srcH;
+
+    tempSrc = (unsigned char *)malloc(sizeof(char) * srcW * srcH * channel);
+    memcpy(tempSrc, src, mSize);
+
+    for(i = 0; i < desH; i ++)
+    {
+        for(j = 0; j < desW; j ++)
+        {
+            for(k = 0; k < channel; k ++)
+            {
+                src[(i * desW + j) * channel + k] = tempSrc[((srcH - 1 - i) * srcW + srcW - 1 - j) * channel + k];
+            }
+
+        }
+    }
+
+    free(tempSrc);
+    return 0;
+}
+
+
 // transfer specific frame data to the Surface(ANativeWindow)
 int copyToSurface(uvc_frame_t *frame, ANativeWindow **window) {
     // ENTER();
     int result = 0;
     if (LIKELY(*window)) {
         ANativeWindow_Buffer buffer;
+//        ARect aRect = {0, 0, 700, 700};
+//        aRect.left = 0;
+//        aRect.top = 0;
+//        aRect.right = 700;
+//        aRect.bottom = 700;
         if (LIKELY(ANativeWindow_lock(*window, &buffer, NULL) == 0)) {
             // source = frame data
             const uint8_t *src = (uint8_t *)frame->data;
@@ -722,7 +770,16 @@ int copyToSurface(uvc_frame_t *frame, ANativeWindow **window) {
             // use lower height
             const int h = frame->height < buffer.height ? frame->height : buffer.height;
             // transfer from frame data to the Surface
+//			LOGE("yindong copyFrame pixelFormat:%d frame_w:%d frame_h:%d buffer_w:%d buffer_h:%d w:%d h:%d src_step:%d dest_step:%d",
+//				 frame->frame_format, frame->width, frame->height, buffer.width, buffer.height, w, h, src_step, buffer.stride * PREVIEW_PIXEL_BYTES);
+//            const uint8_t *dest1 = ;
+//            rotateRGB90((uint8_t*)src, (uint8_t*)dest, 1280, 720, 1);
+//            RGB32RotateClockwise90((uint8_t*)src, (uint8_t*)dest, 1280, 720);
             copyFrame(src, dest, w, h, src_step, dest_step);
+//            RotationDown(dest, buffer.width, buffer.height, 4);
+//            LOGE("yindong RotationRight90 start");
+//            RotationRight90(dest, buffer.width, buffer.height, 4);
+//            LOGE("yindong RotationRight90 end");
             ANativeWindow_unlockAndPost(*window);
         } else {
             result = -1;
@@ -742,6 +799,7 @@ uvc_frame_t *UVCPreview::draw_preview_one(uvc_frame_t *frame, ANativeWindow **wi
     {
         b = *window != NULL;
     }
+//	LOGE("yindong draw_preview_one");
     pthread_mutex_unlock(&preview_mutex);
     if (LIKELY(b)) {
         uvc_frame_t *converted;
@@ -881,20 +939,20 @@ void UVCPreview::clearCaptureFrame() {
  */
 // static
 void *UVCPreview::capture_thread_func(void *vptr_args) {
+    int result;
+
     ENTER();
     UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
     if (LIKELY(preview)) {
         JavaVM *vm = getVM();
         JNIEnv *env;
-        // 绑定到 JavaVM
+        // attach to JavaVM
         vm->AttachCurrentThread(&env, NULL);
-        preview->do_capture(env);    // 直到 mIsRunning == false 时才返回
-        // 解绑
+        preview->do_capture(env);	// never return until finish previewing
+        // detach from JavaVM
         vm->DetachCurrentThread();
         MARK("DetachCurrentThread");
     }
-    // 线程即将退出：清“活跃”标志
-    preview->mCaptureThreadAlive.store(false, std::memory_order_release);
     PRE_EXIT();
     pthread_exit(NULL);
 }
