@@ -68,7 +68,6 @@ class SimpleUvcActivity : AppCompatActivity() {
             .setPreviewSize(1280, 720)
             .setAutoSelectDevice(false) // 手动选择设备
             .setEnableDebugLog(true)
-            .setVideocntThreshold(1)
             .build()
         
         // 2. 创建管理器
