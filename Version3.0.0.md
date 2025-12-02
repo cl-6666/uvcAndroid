@@ -34,7 +34,7 @@ UvcKit 是一个功能强大、易于使用的 Android UVC 摄像头集成库，
 
 ### 添加依赖
 
-#### 方式 1: Gradle 依赖（推荐）
+#### 方式 1: Gradle 依赖目前不支持
 
 在项目根目录的 `build.gradle` 文件中添加：
 
@@ -52,11 +52,11 @@ allprojects {
 
 ```gradle
 dependencies {
-    implementation 'com.cl:UvcKit:1.0.10'
+    
 }
 ```
 
-#### 方式 2: 本地 AAR 文件
+#### 方式 2: 本地 AAR 文件（推荐）
 
 1. 下载最新的 `uvckit-release.aar` 文件
 2. 将 AAR 文件放到 `app/libs/` 目录下
@@ -65,11 +65,7 @@ dependencies {
 ```gradle
 dependencies {
     implementation files('libs/uvckit-release.aar')
-    
     // 必需的依赖
-    implementation 'androidx.core:core:1.13.1'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.annotation:annotation:1.8.0'
     implementation 'cn.hutool:hutool-core:5.8.35'
     implementation 'com.github.cl-6666:ZLog:v2.0.0'
 }
