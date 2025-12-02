@@ -1,24 +1,17 @@
 plugins {
-    alias(libs.plugins.android.application)
+    id 'com.android.library'
     alias(libs.plugins.kotlin.android)
 }
 
 android {
-    namespace 'com.maxvision.uvcandroid'
-    compileSdk 36
+    namespace 'com.maxvisionl.uvclib'
+    compileSdk 34
 
     defaultConfig {
-        applicationId "com.maxvision.uvcandroid"
         minSdk 24
-        targetSdk 36
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildFeatures {
-        viewBinding true
+        consumerProguardFiles "consumer-rules.pro"
     }
 
     buildTypes {
@@ -34,20 +27,12 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
-
-    buildFeatures {
-        viewBinding true
-    }
 }
 
 dependencies {
-    // UVC Kit dependency
-    implementation project(':uvclib')
-
+    api fileTree(include: ['*.aar'], dir: 'libs')
     implementation libs.androidx.core.ktx
     implementation libs.androidx.appcompat
     implementation libs.material
-    testImplementation libs.junit
-    androidTestImplementation libs.androidx.junit
-    androidTestImplementation libs.androidx.espresso.core
+    api 'com.github.cl-6666:ZLog:v2.0.0'
 }
